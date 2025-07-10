@@ -1,5 +1,7 @@
 // Tree-sitter WASM Rust parser implementation for Cloudflare Workers
-import { Parser, Language, Query, Node } from 'web-tree-sitter'
+import { Parser, Language, Query } from 'web-tree-sitter'
+import type { Node } from 'web-tree-sitter'
+
 import type {
   ParsedCrate,
   ParsedModule,

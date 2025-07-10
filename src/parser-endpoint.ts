@@ -15,7 +15,7 @@ export interface ParserResponse {
   success: boolean
   parseTime: number
   itemCount: number
-  errors: Array<{ message: string; severity: string; location?: any }>
+  errors: Array<{ message: string; severity: string; location?: { startLine: number; startColumn: number; endLine: number; endColumn: number } }>
   items?: Array<{
     type: string
     name: string

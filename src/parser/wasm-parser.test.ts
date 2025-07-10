@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { WasmRustParser, createWasmRustParser, parseRustCodeWasm } from './wasm-parser'
+
 import { TEST_FIXTURES } from './test-fixtures'
 import type { ParserOptions } from './types'
+import type { WasmRustParser } from './wasm-parser'
+import { createWasmRustParser, parseRustCodeWasm } from './wasm-parser'
 
 describe('WASM Rust Parser', () => {
   let parser: WasmRustParser
@@ -223,7 +225,7 @@ describe('parseRustCodeWasm utility function', () => {
   it('should handle multiple rapid parsing calls', async () => {
     const promises = Array.from({ length: 3 }, (_, i) =>
       parseRustCodeWasm(
-        `fn test_${i}() { println!(\"test\"); }`,
+        `fn test_${i}() { println!("test"); }`,
         {},
         './public/wasm/tree-sitter.wasm',
         './public/wasm/tree-sitter-rust.wasm'

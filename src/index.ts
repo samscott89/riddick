@@ -31,7 +31,7 @@ export default {
     // Parser test endpoint
     if (url.pathname === '/parse' && request.method === 'POST') {
       try {
-        const parseRequest = (await request.json()) as any
+        const parseRequest = (await request.json()) as { code: string }
         const result = await handleParseRequest(parseRequest)
 
         return new Response(JSON.stringify(result), {

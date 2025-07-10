@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest'
 
-import { createWasmRustParser, parseRustCodeWasm } from './wasm-parser'
 import { TEST_FIXTURES } from './test-fixtures'
-import type { ItemType } from './types'
+import type { ItemType, ParseResult } from './types'
+import type { WasmRustParser } from './wasm-parser'
+import { createWasmRustParser, parseRustCodeWasm } from './wasm-parser'
 
 // Helper functions with WASM paths
-const createRustParser = () => createWasmRustParser()
-const parseRustCode = (sourceCode: string) => 
+const createRustParser = (): WasmRustParser => createWasmRustParser()
+const parseRustCode = (sourceCode: string): Promise<ParseResult> => 
   parseRustCodeWasm(sourceCode, {}, './public/wasm/tree-sitter.wasm', './public/wasm/tree-sitter-rust.wasm')
 
 describe('Parser Integration Tests', () => {
@@ -24,7 +25,7 @@ describe('Parser Integration Tests', () => {
 
       // Verify we have different types of items
       const itemTypes = new Set(
-        crate.rootModule.items.map((item: any) => item.type),
+        crate.rootModule.items.map((item) => item.type),
       )
       expect(itemTypes.has('struct' as ItemType)).toBe(true)
       expect(itemTypes.has('enum' as ItemType)).toBe(true)
@@ -76,7 +77,7 @@ describe('Parser Integration Tests', () => {
       expect(result.success).toBe(true)
 
       const items = result.crate!.rootModule.items
-      const modules = items.filter((item: any) => item.type === 'mod')
+      const modules = items.filter((item) => item.type === 'mod')
       expect(modules).toHaveLength(1)
       expect(modules[0].name).toBe('outer')
     })
@@ -101,7 +102,7 @@ describe('Parser Integration Tests', () => {
       expect(func.parameters).toBeDefined()
       expect(func.parameters!.length).toBeGreaterThan(3)
 
-      const selfParam = func.parameters!.find((p: any) => p.isSelf)
+      const selfParam = func.parameters!.find((p) => p.isSelf)
       expect(selfParam).toBeDefined()
       expect(selfParam!.name).toBe('self')
     })
@@ -124,12 +125,12 @@ describe('Parser Integration Tests', () => {
       expect(struct.fields!.length).toBe(4)
 
       const publicField = struct.fields!.find(
-        (f: any) => f.name === 'public_field',
+        (f) => f.name === 'public_field',
       )
       expect(publicField?.visibility).toBe('pub')
 
       const privateField = struct.fields!.find(
-        (f: any) => f.name === 'private_field',
+        (f) => f.name === 'private_field',
       )
       expect(privateField?.visibility).toBe('private')
     })
@@ -162,8 +163,8 @@ describe('Parser Integration Tests', () => {
       const items = result.crate!.rootModule.items
       expect(items).toHaveLength(2)
 
-      const struct = items.find((item: any) => item.type === 'struct')
-      const impl = items.find((item: any) => item.type === 'impl')
+      const struct = items.find((item) => item.type === 'struct')
+      const impl = items.find((item) => item.type === 'impl')
 
       expect(struct?.genericParameters).toContain('T')
       expect(struct?.genericParameters).toContain('U')
@@ -193,10 +194,10 @@ describe('Parser Integration Tests', () => {
       expect(enumItem.variants!.length).toBe(4)
 
       const variants = enumItem.variants!
-      expect(variants.map((v: any) => v.name)).toContain('Unit')
-      expect(variants.map((v: any) => v.name)).toContain('Tuple')
-      expect(variants.map((v: any) => v.name)).toContain('Struct')
-      expect(variants.map((v: any) => v.name)).toContain('WithDiscriminant')
+      expect(variants.map((v) => v.name)).toContain('Unit')
+      expect(variants.map((v) => v.name)).toContain('Tuple')
+      expect(variants.map((v) => v.name)).toContain('Struct')
+      expect(variants.map((v) => v.name)).toContain('WithDiscriminant')
     })
 
     it('should handle trait implementations with associated types', async () => {
@@ -224,8 +225,8 @@ describe('Parser Integration Tests', () => {
       const items = result.crate!.rootModule.items
       expect(items).toHaveLength(2)
 
-      const trait = items.find((item: any) => item.type === 'trait')
-      const impl = items.find((item: any) => item.type === 'impl')
+      const trait = items.find((item) => item.type === 'trait')
+      const impl = items.find((item) => item.type === 'impl')
 
       expect(trait?.name).toBe('MyTrait')
       expect(impl?.traitName).toBe('MyTrait')
@@ -247,8 +248,8 @@ describe('Parser Integration Tests', () => {
       expect(result.errors.length).toBeGreaterThan(0)
 
       const errors = result.errors
-      expect(errors.some((e: any) => e.location !== undefined)).toBe(true)
-      expect(errors.every((e: any) => e.message.length > 0)).toBe(true)
+      expect(errors.some((e) => e.location !== undefined)).toBe(true)
+      expect(errors.every((e) => e.message.length > 0)).toBe(true)
     })
 
     it('should handle partial parsing of valid sections', async () => {
@@ -379,7 +380,7 @@ describe('Parser Integration Tests', () => {
       const items = result.crate!.rootModule.items
       expect(items.length).toBe(2)
 
-      const struct = items.find((item: any) => item.type === 'struct')
+      const struct = items.find((item) => item.type === 'struct')
       expect(struct?.attributes?.length).toBeGreaterThan(0)
     })
 
@@ -410,7 +411,7 @@ describe('Parser Integration Tests', () => {
       expect(items.length).toBeGreaterThan(3)
 
       const asyncFn = items.find(
-        (item: any) => item.name === 'fetch_and_process',
+        (item) => item.name === 'fetch_and_process',
       )
       expect(asyncFn?.type).toBe('function')
     })
