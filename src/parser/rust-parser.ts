@@ -101,17 +101,37 @@ export class RustParser {
     const items: ParsedItem[] = []
     const submodules: ParsedModule[] = []
 
-    // Use manual tree walking to find all top-level items
-    for (let i = 0; i < node.childCount; i++) {
-      const child = node.child(i)
-      if (child) {
-        const item = this.extractItem(child, sourceCode)
+    // Use Tree-sitter queries to find all top-level items
+    const language = this.parser.getLanguage()
+
+    // Simple query that finds all direct children item types
+    const simpleQuery = `
+      (function_item) @function
+      (struct_item) @struct
+      (enum_item) @enum
+      (impl_item) @impl
+      (mod_item) @module
+      (trait_item) @trait
+      (type_item) @type_alias
+      (const_item) @const
+      (static_item) @static
+      (use_declaration) @use
+      (macro_definition) @macro
+    `
+
+    const query = new Parser.Query(language, simpleQuery)
+    const captures = query.captures(node)
+
+    for (const capture of captures) {
+      // Only process direct children, not nested items
+      if (capture.node.parent === node) {
+        const item = this.extractItem(capture.node, sourceCode)
         if (item) {
           items.push(item)
 
           if (item.type === 'mod') {
             // Also extract the module's contents as a submodule
-            const bodyNode = child.childForFieldName('body')
+            const bodyNode = capture.node.childForFieldName('body')
             if (bodyNode) {
               const submodule = await this.extractModule(
                 bodyNode,
