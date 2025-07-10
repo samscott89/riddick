@@ -58,6 +58,7 @@
     "wrangler": "^4.24.0"
   },
   "dependencies": {
-    "web-tree-sitter": "^0.25.6"
+    "tree-sitter": "^0.22.4",
+    "tree-sitter-rust": "^0.24.0"
   }
 }

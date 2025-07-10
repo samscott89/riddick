@@ -1,6 +1,6 @@
 # Rust Parser Foundation
 
-A comprehensive Rust parser implementation using Tree-sitter with WASM bindings, designed for Cloudflare Workers environments.
+A comprehensive Rust parser implementation using Tree-sitter, designed for extracting structured information from Rust source code.
 
 ## 🚀 Features
 
@@ -31,36 +31,12 @@ A comprehensive Rust parser implementation using Tree-sitter with WASM bindings,
 - **Resource Management**: Proper cleanup and disposal of parser resources
 - **Performance Monitoring**: Built-in timing and performance metrics
 - **Configurable Options**: Customizable parsing behavior
-- **Comprehensive Testing**: 162+ tests covering all functionality
+- **Comprehensive Testing**: 139+ tests covering core functionality
 
 ## 📦 Installation
 
 ```bash
-npm install web-tree-sitter
-```
-
-## 🔧 Setup
-
-### 1. Download Tree-sitter WASM Files
-
-You'll need the Tree-sitter WASM files for your Cloudflare Workers deployment:
-
-```bash
-# Download the core Tree-sitter WASM
-curl -L https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter.wasm -o public/tree-sitter.wasm
-
-# Download the Rust grammar WASM
-curl -L https://github.com/tree-sitter/tree-sitter-rust/releases/latest/download/tree-sitter-rust.wasm -o public/tree-sitter-rust.wasm
-```
-
-### 2. Cloudflare Workers Configuration
-
-Add the WASM files to your `wrangler.toml`:
-
-```toml
-[[rules]]
-type = "Data"
-globs = ["**/*.wasm"]
+npm install tree-sitter tree-sitter-rust
 ```
 
 ## 🚀 Usage
@@ -103,7 +79,7 @@ const parser = createRustParser({
     timeout: 5000,
 })
 
-await parser.initialize('/path/to/tree-sitter-rust.wasm')
+await parser.initialize()
 
 try {
     const result = await parser.parseString(rustCode, 'my-crate')
@@ -171,7 +147,7 @@ if (!result.success) {
 - **RustParser**: Main parser class with Tree-sitter integration
 - **Tree-sitter Queries**: Sophisticated pattern matching for Rust constructs
 - **Error Recovery**: Graceful handling of malformed code
-- **Resource Management**: Proper WASM module lifecycle
+- **Resource Management**: Proper parser lifecycle management
 
 #### 3. Query System (`queries.ts`)
 - Pre-built Tree-sitter queries for all Rust constructs
@@ -190,7 +166,7 @@ Rust Source Code
        ↓
    Validation
        ↓
-  Tree-sitter WASM
+  Tree-sitter
        ↓
    Query System
        ↓
@@ -289,24 +265,16 @@ export default {
 
 ### Performance Considerations
 
-- **WASM Loading**: Tree-sitter WASM files are ~1MB, consider CDN caching
 - **Memory Usage**: Large files may require streaming or chunking
 - **Timeout Handling**: Set appropriate timeouts for your use case
 - **Resource Cleanup**: Always call `dispose()` to prevent memory leaks
+- **Parser Reuse**: Consider reusing parser instances for better performance
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **WASM Loading Errors**
-   ```
-   Failed to initialize Rust parser: WASM load failed
-   ```
-   - Ensure WASM files are accessible at the specified paths
-   - Check CORS headers for WASM files
-   - Verify Cloudflare Workers WASM configuration
-
-2. **Parse Timeouts**
+1. **Parse Timeouts**
    ```
    Parser timed out after 5000ms
    ```
@@ -314,13 +282,20 @@ export default {
    - Consider breaking large files into smaller chunks
    - Use streaming parsing for very large codebases
 
-3. **Memory Issues**
+2. **Memory Issues**
    ```
    Insufficient memory to parse the code
    ```
    - Implement chunked parsing for large files
    - Ensure proper resource disposal
-   - Monitor Workers memory limits
+   - Monitor memory limits
+
+3. **TypeScript Compilation Errors**
+   ```
+   Type errors in parser interface
+   ```
+   - Ensure tree-sitter and tree-sitter-rust are properly installed
+   - Check TypeScript version compatibility
 
 ### Debug Mode
 
@@ -353,7 +328,6 @@ try {
 
 - [Tree-sitter Documentation](https://tree-sitter.github.io/tree-sitter/)
 - [Tree-sitter Rust Grammar](https://github.com/tree-sitter/tree-sitter-rust)
-- [Cloudflare Workers WASM](https://developers.cloudflare.com/workers/runtime-apis/webassembly/)
 - [Rust Language Reference](https://doc.rust-lang.org/reference/)
 
 ## 📄 License

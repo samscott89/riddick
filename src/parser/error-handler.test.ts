@@ -342,10 +342,10 @@ describe('error creation utilities', () => {
   })
 
   it('should create initialization error', () => {
-    const originalError = new Error('WASM load failed')
+    const originalError = new Error('Tree-sitter load failed')
     const error = createInitializationError(originalError)
     expect(error.message).toContain('Failed to initialize parser')
-    expect(error.message).toContain('WASM load failed')
+    expect(error.message).toContain('Tree-sitter load failed')
     expect(error.severity).toBe('error')
   })
 
