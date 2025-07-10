@@ -33,7 +33,10 @@ export async function handleParseRequest(
   const startTime = Date.now()
 
   try {
-    const result = await parseRustCode(request.code, request.options || {})
+    const result = await parseRustCode(
+      request.code, 
+      request.options || {}
+    )
 
     const response: ParserResponse = {
       success: result.success,

@@ -5,10 +5,10 @@ import type { ItemType, ParseResult } from './types'
 import type { WasmRustParser } from './wasm-parser'
 import { createWasmRustParser, parseRustCodeWasm } from './wasm-parser'
 
-// Helper functions with WASM paths
+// Helper functions
 const createRustParser = (): WasmRustParser => createWasmRustParser()
 const parseRustCode = (sourceCode: string): Promise<ParseResult> => 
-  parseRustCodeWasm(sourceCode, {}, './public/wasm/tree-sitter.wasm', './public/wasm/tree-sitter-rust.wasm')
+  parseRustCodeWasm(sourceCode, {})
 
 describe('Parser Integration Tests', () => {
   describe('end-to-end parsing workflows', () => {
@@ -295,7 +295,7 @@ describe('Parser Integration Tests', () => {
   describe('parser disposal and resource management', () => {
     it('should properly dispose of parser resources', async () => {
       const parser = createRustParser()
-      await parser.initialize('./public/wasm/tree-sitter.wasm', './public/wasm/tree-sitter-rust.wasm')
+      await parser.initialize()
 
       const result = await parser.parseString(TEST_FIXTURES.SIMPLE_FUNCTION)
       expect(result.success).toBe(true)
@@ -309,7 +309,7 @@ describe('Parser Integration Tests', () => {
 
     it('should handle multiple disposal calls gracefully', async () => {
       const parser = createRustParser()
-      await parser.initialize('./public/wasm/tree-sitter.wasm', './public/wasm/tree-sitter-rust.wasm')
+      await parser.initialize()
 
       parser.dispose()
       expect(() => parser.dispose()).not.toThrow()
@@ -321,7 +321,7 @@ describe('Parser Integration Tests', () => {
     it('should respect timeout option', async () => {
       const options = { timeout: 1 } // Very short timeout
       const parser = createRustParser(options)
-      await parser.initialize('./public/wasm/tree-sitter.wasm', './public/wasm/tree-sitter-rust.wasm')
+      await parser.initialize()
 
       try {
         // Large file should potentially timeout with very short limit
@@ -344,7 +344,7 @@ describe('Parser Integration Tests', () => {
 
       for (const config of configs) {
         const parser = createRustParser(config)
-        await parser.initialize('./public/wasm/tree-sitter.wasm', './public/wasm/tree-sitter-rust.wasm')
+        await parser.initialize()
 
         const result = await parser.parseString(TEST_FIXTURES.SIMPLE_FUNCTION)
         expect(result.success).toBe(true)

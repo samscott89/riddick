@@ -10,10 +10,7 @@ describe('WASM Rust Parser', () => {
 
   beforeAll(async () => {
     parser = createWasmRustParser()
-    await parser.initialize(
-      './public/wasm/tree-sitter.wasm',
-      './public/wasm/tree-sitter-rust.wasm'
-    )
+    await parser.initialize()
   })
 
   afterAll(() => {
@@ -23,10 +20,7 @@ describe('WASM Rust Parser', () => {
   describe('initialization', () => {
     it('should initialize successfully', async () => {
       const testParser = createWasmRustParser()
-      await expect(testParser.initialize(
-        './public/wasm/tree-sitter.wasm',
-        './public/wasm/tree-sitter-rust.wasm'
-      )).resolves.not.toThrow()
+      await expect(testParser.initialize()).resolves.not.toThrow()
       testParser.dispose()
     })
 
@@ -169,10 +163,7 @@ describe('WASM Rust Parser', () => {
       }
 
       const testParser = createWasmRustParser(options)
-      await testParser.initialize(
-        './public/wasm/tree-sitter.wasm',
-        './public/wasm/tree-sitter-rust.wasm'
-      )
+      await testParser.initialize()
 
       const result = await testParser.parseString(TEST_FIXTURES.SIMPLE_FUNCTION)
       expect(result.success).toBe(true)
@@ -208,9 +199,7 @@ describe('parseRustCodeWasm utility function', () => {
   it('should parse code and dispose parser automatically', async () => {
     const result = await parseRustCodeWasm(
       TEST_FIXTURES.SIMPLE_FUNCTION,
-      {},
-      './public/wasm/tree-sitter.wasm',
-      './public/wasm/tree-sitter-rust.wasm'
+      {}
     )
 
     expect(result.success).toBe(true)
@@ -226,9 +215,7 @@ describe('parseRustCodeWasm utility function', () => {
     const promises = Array.from({ length: 3 }, (_, i) =>
       parseRustCodeWasm(
         `fn test_${i}() { println!("test"); }`,
-        {},
-        './public/wasm/tree-sitter.wasm',
-        './public/wasm/tree-sitter-rust.wasm'
+        {}
       ),
     )
 

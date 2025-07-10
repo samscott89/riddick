@@ -1,0 +1,6 @@
+name = "rust-parser"
+main = "build/worker/shim.mjs"
+compatibility_date = "2025-07-10"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"

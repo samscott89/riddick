@@ -1,6 +1,8 @@
 // Tree-sitter WASM Rust parser implementation for Cloudflare Workers
 import { Parser, Language, Query } from 'web-tree-sitter'
 import type { Node } from 'web-tree-sitter'
+import treeSitterWasm from 'web-tree-sitter/tree-sitter.wasm'
+import rustWasm from '../wasm/tree-sitter-rust.wasm'
 
 import type {
   ParsedCrate,
@@ -21,32 +23,30 @@ export class WasmRustParser {
   private language: Language | null = null
   private initialized = false
 
-  constructor(private options: ParserOptions = {}) {}
+  constructor(private options: ParserOptions = {}) { }
 
-  async initialize(wasmPath?: string, rustWasmPath?: string): Promise<void> {
+  async initialize(): Promise<void> {
     if (this.initialized) return
 
     try {
-      // Initialize web-tree-sitter with custom WASM path if provided
-      if (wasmPath) {
-        await Parser.init({
-          locateFile: (scriptName: string) => {
-            if (scriptName === 'tree-sitter.wasm') {
-              return wasmPath
-            }
-            return scriptName
-          },
-        })
-      } else {
-        await Parser.init()
-      }
+      // Initialize web-tree-sitter with the imported WASM module
+      await Parser.init({
+        path: './wasm/tree-sitter.wasm',
+      }).then(() => {
+        console.log('Tree-sitter WASM initialized')
+        // Parser.setWasmModule(treeSitterWasm)
+      });
 
       this.parser = new Parser()
 
-      // Load the Rust language WASM
-      const rustWasmUrl = rustWasmPath || '/wasm/tree-sitter-rust.wasm'
-      this.language = await Language.load(rustWasmUrl)
-      this.parser.setLanguage(this.language)
+      console.log(this.parser)
+      const Rust = await Language.load('./wasm/tree-sitter-rust.wasm');
+      console.log(Rust);
+
+      // Load the Rust language WASM using the imported module
+      this.language = Rust
+      this.parser.setLanguage(Rust)
+      console.log(this.parser);
 
       this.initialized = true
     } catch (error) {
@@ -149,9 +149,9 @@ export class WasmRustParser {
 
     for (const capture of captures) {
       // For root node, check if it's a direct child or if parent is source_file
-      const isDirectChild = capture.node.parent === node || 
-                           (node.type === 'source_file' && capture.node.parent?.type === 'source_file')
-      
+      const isDirectChild = capture.node.parent === node ||
+        (node.type === 'source_file' && capture.node.parent?.type === 'source_file')
+
       if (isDirectChild) {
         const item = this.extractItem(capture.node, sourceCode)
         if (item) {
@@ -689,11 +689,9 @@ export function createWasmRustParser(options: ParserOptions = {}): WasmRustParse
 export async function parseRustCodeWasm(
   sourceCode: string,
   options: ParserOptions = {},
-  wasmPath?: string,
-  rustWasmPath?: string,
 ): Promise<ParseResult> {
   const parser = createWasmRustParser(options)
-  await parser.initialize(wasmPath, rustWasmPath)
+  await parser.initialize()
 
   try {
     return await parser.parseString(sourceCode)

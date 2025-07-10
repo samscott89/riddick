@@ -1,0 +1,88 @@
+
+> riddick@1.0.0 dev
+> wrangler dev
+
+
+ ⛅️ wrangler 4.24.0 (update available 4.24.3)
+─────────────────────────────────────────────
+Your Worker has access to the following bindings:
+Binding                  Resource         Mode
+env.DB (riddick-db)      D1 Database      local
+
+[wrangler:info] Ready on http://localhost:8787
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mBuild failed with 2 errors:[0m
+
+  [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mENOENT: no such file or directory, open '/Users/sam/work/riddick/src/wasm/tree-sitter-rust.wasm'[0m [1m[35m[plugin wrangler-module-collector][0m
+  
+      node_modules/wrangler/node_modules/esbuild/lib/main.js:1213:21:
+  [37m      1213 │         let result = [32m[37mawait callback({
+             ╵                      [32m^[0m
+  
+      at async open (node:internal/fs/promises:634:25)
+      at async readFile (node:internal/fs/promises:1238:14)
+      at async /Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52494:37
+      at async requestCallbacks.on-resolve (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:1213:22)
+      at async handleRequest (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:626:11)
+  
+    This error came from the "onResolve" callback registered here:
+  
+      node_modules/wrangler/wrangler-dist/cli.js:52461:19:
+  [37m      52461 │             build5.[32monResolve[37m(
+              ╵                    [32m~~~~~~~~~[0m
+  
+      at /Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52461:20
+      at Array.forEach (<anonymous>)
+      at /Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52460:22
+      at Array.forEach (<anonymous>)
+      at setup (/Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52456:28)
+      at handlePlugins (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:1137:21)
+      at buildOrContextImpl (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:852:5)
+      at Object.buildOrContext (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:678:5)
+      at /Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:2030:68
+  
+    The plugin "wrangler-module-collector" was triggered by this import
+  
+      src/parser/wasm-parser.ts:5:21:
+  [37m      5 │ import rustWasm from [32m'../wasm/tree-sitter-rust.wasm'[37m
+          ╵                      [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+  
+  
+  [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mENOENT: no such file or directory, open '/Users/sam/work/riddick/src/wasm/tree-sitter.wasm'[0m [1m[35m[plugin wrangler-module-collector][0m
+  
+      node_modules/wrangler/node_modules/esbuild/lib/main.js:1213:21:
+  [37m      1213 │         let result = [32m[37mawait callback({
+             ╵                      [32m^[0m
+  
+      at async open (node:internal/fs/promises:634:25)
+      at async readFile (node:internal/fs/promises:1238:14)
+      at async /Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52494:37
+      at async requestCallbacks.on-resolve (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:1213:22)
+      at async handleRequest (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:626:11)
+  
+    This error came from the "onResolve" callback registered here:
+  
+      node_modules/wrangler/wrangler-dist/cli.js:52461:19:
+  [37m      52461 │             build5.[32monResolve[37m(
+              ╵                    [32m~~~~~~~~~[0m
+  
+      at /Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52461:20
+      at Array.forEach (<anonymous>)
+      at /Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52460:22
+      at Array.forEach (<anonymous>)
+      at setup (/Users/sam/work/riddick/node_modules/wrangler/wrangler-dist/cli.js:52456:28)
+      at handlePlugins (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:1137:21)
+      at buildOrContextImpl (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:852:5)
+      at Object.buildOrContext (/Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:678:5)
+      at /Users/sam/work/riddick/node_modules/wrangler/node_modules/esbuild/lib/main.js:2030:68
+  
+    The plugin "wrangler-module-collector" was triggered by this import
+  
+      src/parser/wasm-parser.ts:4:27:
+  [37m      4 │ import treeSitterWasm from [32m'../wasm/tree-sitter.wasm'[37m
+          ╵                            [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+  
+  
+
+
+🪵  Logs were written to "/Users/sam/Library/Preferences/.wrangler/logs/wrangler-2025-07-10_22-51-50_296.log"
