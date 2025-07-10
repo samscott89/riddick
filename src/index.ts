@@ -31,9 +31,9 @@ export default {
     // Parser test endpoint
     if (url.pathname === '/parse' && request.method === 'POST') {
       try {
-        const parseRequest = await request.json() as any
+        const parseRequest = (await request.json()) as any
         const result = await handleParseRequest(parseRequest)
-        
+
         return new Response(JSON.stringify(result), {
           status: 200,
           headers: {
@@ -70,16 +70,19 @@ export default {
     if (url.pathname === '/parse/test' && request.method === 'GET') {
       try {
         const result = await handleParseRequest(EXAMPLE_REQUESTS[0])
-        
-        return new Response(JSON.stringify({
-          request: EXAMPLE_REQUESTS[0],
-          result,
-        }), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
+
+        return new Response(
+          JSON.stringify({
+            request: EXAMPLE_REQUESTS[0],
+            result,
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+            },
           },
-        })
+        )
       } catch (error) {
         return new Response(
           JSON.stringify({

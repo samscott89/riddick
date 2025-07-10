@@ -7,9 +7,7 @@ import type { ItemType } from './types'
 describe('Parser Integration Tests', () => {
   describe('end-to-end parsing workflows', () => {
     it('should parse and extract complete crate information', async () => {
-      const result = await parseRustCode(
-        TEST_FIXTURES.COMPLETE_MODULE
-      )
+      const result = await parseRustCode(TEST_FIXTURES.COMPLETE_MODULE)
 
       expect(result.success).toBe(true)
       expect(result.crate).toBeDefined()
@@ -20,7 +18,9 @@ describe('Parser Integration Tests', () => {
       expect(crate.rootModule).toBe(crate.modules[0])
 
       // Verify we have different types of items
-      const itemTypes = new Set(crate.rootModule.items.map((item: any) => item.type))
+      const itemTypes = new Set(
+        crate.rootModule.items.map((item: any) => item.type),
+      )
       expect(itemTypes.has('struct' as ItemType)).toBe(true)
       expect(itemTypes.has('enum' as ItemType)).toBe(true)
       expect(itemTypes.has('trait' as ItemType)).toBe(true)
@@ -118,7 +118,9 @@ describe('Parser Integration Tests', () => {
       expect(struct.fields).toBeDefined()
       expect(struct.fields!.length).toBe(4)
 
-      const publicField = struct.fields!.find((f: any) => f.name === 'public_field')
+      const publicField = struct.fields!.find(
+        (f: any) => f.name === 'public_field',
+      )
       expect(publicField?.visibility).toBe('pub')
 
       const privateField = struct.fields!.find(
@@ -402,7 +404,9 @@ describe('Parser Integration Tests', () => {
       const items = result.crate!.rootModule.items
       expect(items.length).toBeGreaterThan(3)
 
-      const asyncFn = items.find((item: any) => item.name === 'fetch_and_process')
+      const asyncFn = items.find(
+        (item: any) => item.name === 'fetch_and_process',
+      )
       expect(asyncFn?.type).toBe('function')
     })
   })

@@ -218,7 +218,10 @@ export class RustParser {
     }
   }
 
-  private extractStruct(node: Parser.SyntaxNode, sourceCode: string): ParsedItem {
+  private extractStruct(
+    node: Parser.SyntaxNode,
+    sourceCode: string,
+  ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
     const fields = this.extractStructFields(node, sourceCode)
     const visibility = this.extractVisibility(node, sourceCode)
@@ -314,7 +317,10 @@ export class RustParser {
     }
   }
 
-  private extractTrait(node: Parser.SyntaxNode, sourceCode: string): ParsedItem {
+  private extractTrait(
+    node: Parser.SyntaxNode,
+    sourceCode: string,
+  ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
     const visibility = this.extractVisibility(node, sourceCode)
     const attributes = this.extractAttributes(node, sourceCode)
@@ -369,7 +375,10 @@ export class RustParser {
     }
   }
 
-  private extractStatic(node: Parser.SyntaxNode, sourceCode: string): ParsedItem {
+  private extractStatic(
+    node: Parser.SyntaxNode,
+    sourceCode: string,
+  ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
     const visibility = this.extractVisibility(node, sourceCode)
     const attributes = this.extractAttributes(node, sourceCode)
@@ -402,7 +411,10 @@ export class RustParser {
     }
   }
 
-  private extractMacro(node: Parser.SyntaxNode, sourceCode: string): ParsedItem {
+  private extractMacro(
+    node: Parser.SyntaxNode,
+    sourceCode: string,
+  ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
     const visibility = this.extractVisibility(node, sourceCode)
     const attributes = this.extractAttributes(node, sourceCode)
@@ -559,7 +571,6 @@ export class RustParser {
     sourceCode: string,
   ): string[] {
     const generics: string[] = []
-    
     // Look for type_parameters in the node's children
     for (let i = 0; i < node.childCount; i++) {
       const child = node.child(i)
@@ -567,11 +578,9 @@ export class RustParser {
         // Found type parameters, extract them
         for (let j = 0; j < child.childCount; j++) {
           const param = child.child(j)
-          if (param?.type === 'type_identifier') {
+          if (param?.type === 'type_parameter') {
             const name = this.getNodeText(param, sourceCode)
-            if (name && name !== '<' && name !== '>' && name !== ',') {
-              generics.push(name)
-            }
+            generics.push(name)
           }
         }
       }

@@ -27,26 +27,28 @@ export interface ParserResponse {
   }>
 }
 
-export async function handleParseRequest(request: ParserRequest): Promise<ParserResponse> {
+export async function handleParseRequest(
+  request: ParserRequest,
+): Promise<ParserResponse> {
   const startTime = Date.now()
-  
+
   try {
     const result = await parseRustCode(request.code, request.options || {})
-    
+
     const response: ParserResponse = {
       success: result.success,
       parseTime: result.parseTime,
       itemCount: result.crate?.rootModule.items.length || 0,
-      errors: result.errors.map(error => ({
+      errors: result.errors.map((error) => ({
         message: error.message,
         severity: error.severity,
         location: error.location,
       })),
     }
-    
+
     // Include parsed items if successful
     if (result.success && result.crate) {
-      response.items = result.crate.rootModule.items.map(item => ({
+      response.items = result.crate.rootModule.items.map((item) => ({
         type: item.type,
         name: item.name,
         visibility: item.visibility,
@@ -56,7 +58,7 @@ export async function handleParseRequest(request: ParserRequest): Promise<Parser
         },
       }))
     }
-    
+
     return response
   } catch (error) {
     return {
