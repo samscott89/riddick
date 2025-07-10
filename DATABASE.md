@@ -32,6 +32,51 @@ CREATE TABLE crates (
 - `idx_crates_status` - On `status` column  
 - `idx_crates_created_at` - On `created_at` column
 
+### Modules Table
+
+The `modules` table tracks modules within crates:
+
+```sql
+CREATE TABLE modules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    crate_id INTEGER NOT NULL,
+    path TEXT NOT NULL,
+    agent_summary TEXT,
+    FOREIGN KEY (crate_id) REFERENCES crates(id) ON DELETE CASCADE
+);
+```
+
+**Indexes:**
+- `idx_modules_crate_id` - On `crate_id` column
+- `idx_modules_path` - On `path` column
+
+### Items Table
+
+The `items` table tracks individual items (functions, structs, etc.) within modules:
+
+```sql
+CREATE TABLE items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    module_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    item_type TEXT NOT NULL,
+    source_code TEXT NOT NULL,
+    agent_summary TEXT,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+);
+```
+
+**Item Types:**
+- `function` - Functions
+- `struct` - Structs
+- `enum` - Enums
+- `impl` - Implementation blocks
+
+**Indexes:**
+- `idx_items_module_id` - On `module_id` column
+- `idx_items_type` - On `item_type` column
+- `idx_items_name` - On `name` column
+
 ## Migration System
 
 ### Running Migrations
@@ -50,6 +95,11 @@ npm run migrate:remote
 - Named with format: `001_description.sql`
 - Applied in alphabetical order
 - Tracked in `_migrations` table
+
+**Current Migrations:**
+- `001_create_crates_table.sql` - Creates crates table and indexes
+- `002_create_modules_table.sql` - Creates modules table with foreign key to crates
+- `003_create_items_table.sql` - Creates items table with foreign key to modules
 
 ### Creating New Migrations
 
@@ -81,14 +131,28 @@ npm run migrate:remote # Run migrations on production
 
 ## Testing
 
-Database tests are in `src/database.test.ts` and cover:
+Database tests are distributed across multiple test files:
 
+**Core Database Tests (`src/database.test.ts`):**
 - Database connection
 - Migration execution
 - Table structure validation
 - Constraint enforcement
 - Data operations
 - Index creation
+
+**Extended Schema Tests (`src/extended-schema.test.ts`):**
+- Foreign key constraint validation
+- Cascading deletes
+- Hierarchical data operations
+- Test data fixtures
+- Complete schema integration
+
+**Rollback Tests (`src/rollback.test.ts`):**
+- Migration rollback scenarios
+- Data preservation during rollback
+- Constraint removal verification
+- Partial rollback handling
 
 Run tests with:
 ```bash
