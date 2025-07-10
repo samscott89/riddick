@@ -1,6 +1,6 @@
 # Rust Parser Foundation
 
-A comprehensive Rust parser implementation using Tree-sitter, designed for extracting structured information from Rust source code.
+A comprehensive Rust parser implementation using Tree-sitter WASM, designed for extracting structured information from Rust source code and deployable to Cloudflare Workers.
 
 ## 🚀 Features
 
@@ -36,15 +36,17 @@ A comprehensive Rust parser implementation using Tree-sitter, designed for extra
 ## 📦 Installation
 
 ```bash
-npm install tree-sitter tree-sitter-rust
+npm install web-tree-sitter
 ```
+
+The parser uses Tree-sitter WASM bindings that work in both Node.js and Cloudflare Workers environments.
 
 ## 🚀 Usage
 
 ### Basic Parsing
 
 ```typescript
-import { parseRustCode } from './parser'
+import { parseRustCodeWasm } from './parser'
 
 const rustCode = `
 fn greet(name: &str) -> String {
@@ -52,7 +54,16 @@ fn greet(name: &str) -> String {
 }
 `
 
-const result = await parseRustCode(rustCode)
+// For Cloudflare Workers
+const result = await parseRustCodeWasm(rustCode)
+
+// For Node.js (with explicit WASM paths)
+const result = await parseRustCodeWasm(
+  rustCode, 
+  {}, 
+  './public/wasm/tree-sitter.wasm',
+  './public/wasm/tree-sitter-rust.wasm'
+)
 
 if (result.success) {
     console.log('Parsed successfully!')
@@ -69,9 +80,9 @@ if (result.success) {
 ### Advanced Usage with Custom Options
 
 ```typescript
-import { createRustParser } from './parser'
+import { createWasmRustParser } from './parser'
 
-const parser = createRustParser({
+const parser = createWasmRustParser({
     includeComments: true,
     includeDocComments: true,
     includePrivateItems: false,
@@ -79,7 +90,11 @@ const parser = createRustParser({
     timeout: 5000,
 })
 
-await parser.initialize()
+// Initialize with WASM paths
+await parser.initialize(
+  './public/wasm/tree-sitter.wasm',
+  './public/wasm/tree-sitter-rust.wasm'
+)
 
 try {
     const result = await parser.parseString(rustCode, 'my-crate')
@@ -143,11 +158,12 @@ if (!result.success) {
 - **ParsedItem**: Individual code items (functions, structs, etc.)
 - **SourceLocation**: Precise location tracking in source code
 
-#### 2. Parser Engine (`rust-parser.ts`)
-- **RustParser**: Main parser class with Tree-sitter integration
+#### 2. Parser Engine (`wasm-parser.ts`)
+- **WasmRustParser**: Main parser class with Tree-sitter WASM integration
 - **Tree-sitter Queries**: Sophisticated pattern matching for Rust constructs
 - **Error Recovery**: Graceful handling of malformed code
 - **Resource Management**: Proper parser lifecycle management
+- **Cloudflare Workers Support**: Runs in Workers runtime environment
 
 #### 3. Query System (`queries.ts`)
 - Pre-built Tree-sitter queries for all Rust constructs
@@ -241,27 +257,39 @@ npm test -- --coverage
 
 ```typescript
 // worker.ts
-import { parseRustCode } from './parser'
+import { WasmRustParser } from './parser'
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const rustCode = await request.text()
+    const { code } = await request.json()
+    
+    const parser = new WasmRustParser()
     
     try {
-      const result = await parseRustCode(rustCode, {
-        timeout: 10000, // 10 second timeout
-        includeComments: false,
-      })
+      // WASM files are bundled with the Worker
+      await parser.initialize()
+      
+      const result = await parser.parseString(code, 'worker-crate')
       
       return new Response(JSON.stringify(result), {
         headers: { 'Content-Type': 'application/json' },
       })
     } catch (error) {
       return new Response(`Parse error: ${error}`, { status: 400 })
+    } finally {
+      parser.dispose()
     }
   },
 }
 ```
+
+**Setup for Cloudflare Workers:**
+
+1. Copy WASM files to public directory
+2. Configure `wrangler.toml` to upload WASM assets
+3. Deploy with `wrangler deploy`
+
+See `examples/` directory for complete deployment instructions.
 
 ### Performance Considerations
 

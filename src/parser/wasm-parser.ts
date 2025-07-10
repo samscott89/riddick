@@ -1,6 +1,5 @@
-// Tree-sitter Rust parser implementation
-import Parser from 'tree-sitter'
-import Rust from 'tree-sitter-rust'
+// Tree-sitter WASM Rust parser implementation for Cloudflare Workers
+import { Parser, Language, Query, Node } from 'web-tree-sitter'
 import type {
   ParsedCrate,
   ParsedModule,
@@ -15,22 +14,41 @@ import type {
   EnumVariant,
 } from './types'
 
-export class RustParser {
-  private parser: Parser
+export class WasmRustParser {
+  private parser: Parser | null = null
+  private language: Language | null = null
   private initialized = false
 
-  constructor(_options: ParserOptions = {}) {
-    this.parser = new Parser()
-  }
+  constructor(private options: ParserOptions = {}) {}
 
-  async initialize(): Promise<void> {
+  async initialize(wasmPath?: string, rustWasmPath?: string): Promise<void> {
     if (this.initialized) return
 
     try {
-      this.parser.setLanguage(Rust as any)
+      // Initialize web-tree-sitter with custom WASM path if provided
+      if (wasmPath) {
+        await Parser.init({
+          locateFile: (scriptName: string) => {
+            if (scriptName === 'tree-sitter.wasm') {
+              return wasmPath
+            }
+            return scriptName
+          },
+        })
+      } else {
+        await Parser.init()
+      }
+
+      this.parser = new Parser()
+
+      // Load the Rust language WASM
+      const rustWasmUrl = rustWasmPath || '/wasm/tree-sitter-rust.wasm'
+      this.language = await Language.load(rustWasmUrl)
+      this.parser.setLanguage(this.language)
+
       this.initialized = true
     } catch (error) {
-      throw new Error(`Failed to initialize Rust parser: ${error}`)
+      throw new Error(`Failed to initialize WASM Rust parser: ${error}`)
     }
   }
 
@@ -40,7 +58,7 @@ export class RustParser {
   ): Promise<ParseResult> {
     const startTime = performance.now()
 
-    if (!this.initialized) {
+    if (!this.initialized || !this.parser) {
       throw new Error('Parser not initialized. Call initialize() first.')
     }
 
@@ -50,6 +68,10 @@ export class RustParser {
     try {
       // Parse the source code
       const tree = this.parser.parse(sourceCode)
+
+      if (!tree) {
+        throw new Error('Failed to parse source code')
+      }
 
       if (tree.rootNode.hasError) {
         this.extractSyntaxErrors(tree.rootNode, sourceCode, errors)
@@ -92,7 +114,7 @@ export class RustParser {
   }
 
   private async extractModule(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
     moduleName: string,
     path: string,
@@ -101,7 +123,9 @@ export class RustParser {
     const submodules: ParsedModule[] = []
 
     // Use Tree-sitter queries to find all top-level items
-    const language = this.parser.getLanguage()
+    if (!this.language) {
+      throw new Error('Language not loaded')
+    }
 
     // Simple query that finds all direct children item types
     const simpleQuery = `
@@ -118,12 +142,15 @@ export class RustParser {
       (macro_definition) @macro
     `
 
-    const query = new Parser.Query(language, simpleQuery)
+    const query = new Query(this.language, simpleQuery)
     const captures = query.captures(node)
 
     for (const capture of captures) {
-      // Only process direct children, not nested items
-      if (capture.node.parent === node) {
+      // For root node, check if it's a direct child or if parent is source_file
+      const isDirectChild = capture.node.parent === node || 
+                           (node.type === 'source_file' && capture.node.parent?.type === 'source_file')
+      
+      if (isDirectChild) {
         const item = this.extractItem(capture.node, sourceCode)
         if (item) {
           items.push(item)
@@ -155,7 +182,7 @@ export class RustParser {
   }
 
   private extractItem(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem | null {
     const nodeType = node.type
@@ -189,7 +216,7 @@ export class RustParser {
   }
 
   private extractFunction(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -216,7 +243,7 @@ export class RustParser {
   }
 
   private extractStruct(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -237,7 +264,7 @@ export class RustParser {
     }
   }
 
-  private extractEnum(node: Parser.SyntaxNode, sourceCode: string): ParsedItem {
+  private extractEnum(node: Node, sourceCode: string): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
     const variants = this.extractEnumVariants(node, sourceCode)
     const visibility = this.extractVisibility(node, sourceCode)
@@ -256,7 +283,7 @@ export class RustParser {
     }
   }
 
-  private extractImpl(node: Parser.SyntaxNode, sourceCode: string): ParsedItem {
+  private extractImpl(node: Node, sourceCode: string): ParsedItem {
     const implType = this.getNodeText(
       node.childForFieldName('type'),
       sourceCode,
@@ -297,7 +324,7 @@ export class RustParser {
   }
 
   private extractModuleItem(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -315,7 +342,7 @@ export class RustParser {
   }
 
   private extractTrait(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -335,7 +362,7 @@ export class RustParser {
   }
 
   private extractTypeAlias(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -355,7 +382,7 @@ export class RustParser {
   }
 
   private extractConstant(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -373,7 +400,7 @@ export class RustParser {
   }
 
   private extractStatic(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -390,7 +417,7 @@ export class RustParser {
     }
   }
 
-  private extractUse(node: Parser.SyntaxNode, sourceCode: string): ParsedItem {
+  private extractUse(node: Node, sourceCode: string): ParsedItem {
     const useTree = this.getNodeText(
       node.childForFieldName('argument'),
       sourceCode,
@@ -409,7 +436,7 @@ export class RustParser {
   }
 
   private extractMacro(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem {
     const name = this.getNodeText(node.childForFieldName('name'), sourceCode)
@@ -427,7 +454,7 @@ export class RustParser {
   }
 
   private extractFunctionParameters(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): FunctionParameter[] {
     const parameters: FunctionParameter[] = []
@@ -467,7 +494,7 @@ export class RustParser {
   }
 
   private extractStructFields(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): StructField[] {
     const fields: StructField[] = []
@@ -500,7 +527,7 @@ export class RustParser {
   }
 
   private extractEnumVariants(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): EnumVariant[] {
     const variants: EnumVariant[] = []
@@ -531,7 +558,7 @@ export class RustParser {
   }
 
   private extractVisibility(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): ParsedItem['visibility'] {
     for (let i = 0; i < node.childCount; i++) {
@@ -548,7 +575,7 @@ export class RustParser {
   }
 
   private extractAttributes(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): string[] {
     const attributes: string[] = []
@@ -577,7 +604,7 @@ export class RustParser {
   }
 
   private extractGenericParameters(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
   ): string[] {
     const generics: string[] = []
@@ -600,7 +627,7 @@ export class RustParser {
   }
 
   private extractSyntaxErrors(
-    node: Parser.SyntaxNode,
+    node: Node,
     sourceCode: string,
     errors: ParseError[],
   ): void {
@@ -622,7 +649,7 @@ export class RustParser {
     }
   }
 
-  private getSourceLocation(node: Parser.SyntaxNode): SourceLocation {
+  private getSourceLocation(node: Node): SourceLocation {
     return {
       startLine: node.startPosition.row + 1,
       startColumn: node.startPosition.column + 1,
@@ -634,31 +661,37 @@ export class RustParser {
   }
 
   private getNodeText(
-    node: Parser.SyntaxNode | null,
+    node: Node | null,
     sourceCode: string,
   ): string {
     if (!node) return ''
     return sourceCode.slice(node.startIndex, node.endIndex)
   }
 
+
   dispose(): void {
-    // Tree-sitter doesn't require explicit cleanup
+    if (this.parser) {
+      this.parser.delete()
+      this.parser = null
+    }
     this.initialized = false
   }
 }
 
-// Factory function for creating Rust parser instances
-export function createRustParser(options: ParserOptions = {}): RustParser {
-  return new RustParser(options)
+// Factory function for creating WASM Rust parser instances
+export function createWasmRustParser(options: ParserOptions = {}): WasmRustParser {
+  return new WasmRustParser(options)
 }
 
-// Utility function for quick parsing with Tree-sitter
-export async function parseRustCode(
+// Utility function for quick parsing with WASM Tree-sitter
+export async function parseRustCodeWasm(
   sourceCode: string,
   options: ParserOptions = {},
+  wasmPath?: string,
+  rustWasmPath?: string,
 ): Promise<ParseResult> {
-  const parser = createRustParser(options)
-  await parser.initialize()
+  const parser = createWasmRustParser(options)
+  await parser.initialize(wasmPath, rustWasmPath)
 
   try {
     return await parser.parseString(sourceCode)

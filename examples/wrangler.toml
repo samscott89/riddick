@@ -1,0 +1,31 @@
+# Example Wrangler configuration for Cloudflare Workers
+name = "rust-parser-worker"
+main = "dist/cloudflare-worker.js"
+compatibility_date = "2024-09-23"
+
+# Required for web-tree-sitter WASM support
+compatibility_flags = ["nodejs_compat"]
+
+[build]
+command = "npm run build:worker"
+
+# Upload WASM files as assets
+[[assets]]
+bucket = "./public/wasm"
+path = "/wasm"
+
+# Environment variables (if needed)
+[vars]
+ENVIRONMENT = "production"
+
+# Example KV namespace for caching (optional)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"
+
+# Example D1 database binding (optional)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "rust-parser-db"
+# database_id = "your-database-id"
