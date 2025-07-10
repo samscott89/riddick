@@ -6,8 +6,15 @@
   "scripts": {
     "dev": "wrangler dev",
     "test": "vitest",
-    "build": "tsc",
-    "deploy": "wrangler deploy"
+    "build": "tsc --noEmit false",
+    "deploy": "wrangler deploy",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --check \"src/**/*.{ts,json}\"",
+    "format:fix": "prettier --write \"src/**/*.{ts,json}\"",
+    "prepare": "husky",
+    "check": "npm run build && npm run lint && npm run format && npm test",
+    "check:fix": "npm run format:fix && npm run lint:fix && npm run check"
   },
   "repository": {
     "type": "git",
@@ -21,10 +28,31 @@
     "url": "https://github.com/samscott89/riddick/issues"
   },
   "homepage": "https://github.com/samscott89/riddick#readme",
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix",
+      "vitest related --run"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250710.0",
+    "@eslint/js": "^9.30.1",
+    "@typescript-eslint/eslint-plugin": "^8.36.0",
+    "@typescript-eslint/parser": "^8.36.0",
+    "eslint": "^9.30.1",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
     "miniflare": "^3.20250408.2",
+    "prettier": "^3.6.2",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.36.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.24.0"
   }

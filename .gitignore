@@ -22,3 +22,6 @@ target
 
 # My notes
 .notes/
+
+.husky/
+dist/
