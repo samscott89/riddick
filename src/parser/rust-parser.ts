@@ -14,7 +14,6 @@ import type {
   StructField,
   EnumVariant,
 } from './types'
-import { RUST_QUERIES } from './queries'
 
 export class RustParser {
   private parser: Parser
