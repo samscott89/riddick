@@ -12,7 +12,7 @@ migrations_dir = "migrations"
 [env.production]
 name = "riddick-production"
 
-[env.production.d1_databases]
+[[env.production.d1_databases]]
 binding = "DB"
 database_name = "riddick-db-production"
 database_id = "production"
