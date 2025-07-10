@@ -1,5 +1,5 @@
 export interface Env {
-  // Add your bindings here
+  DB: D1Database
   [key: string]: unknown
 }
 

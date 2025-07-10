@@ -14,7 +14,12 @@
     "format:fix": "prettier --write \"src/**/*.{ts,json}\"",
     "prepare": "husky",
     "check": "npm run build && npm run lint && npm run format && npm test",
-    "check:fix": "npm run format:fix && npm run lint:fix && npm run check"
+    "check:fix": "npm run format:fix && npm run lint:fix && npm run check",
+    "migrate:local": "node scripts/migrate.js",
+    "migrate:remote": "node scripts/migrate.js --production",
+    "db:create": "wrangler d1 create riddick-db",
+    "db:shell": "wrangler d1 execute riddick-db --local --command='SELECT 1'",
+    "db:reset": "wrangler d1 execute riddick-db --local --command='DROP TABLE IF EXISTS crates; DROP TABLE IF EXISTS _migrations;'"
   },
   "repository": {
     "type": "git",
