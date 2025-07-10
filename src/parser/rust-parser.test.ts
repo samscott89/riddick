@@ -56,7 +56,6 @@ describe('Rust Parser', () => {
       const func = result.crate?.rootModule.items.find(
         (item) => item.type === 'function',
       )
-      console.log(func)
       expect(func).toBeDefined()
       expect(func?.name).toBe('swap')
       expect(func?.genericParameters).toContain('T')

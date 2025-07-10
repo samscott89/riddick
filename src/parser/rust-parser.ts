@@ -39,7 +39,7 @@ export class RustParser {
     sourceCode: string,
     crateName = 'unnamed',
   ): Promise<ParseResult> {
-    const startTime = Date.now()
+    const startTime = performance.now()
 
     if (!this.initialized) {
       throw new Error('Parser not initialized. Call initialize() first.')
@@ -75,7 +75,7 @@ export class RustParser {
         crate,
         errors,
         success: errors.filter((e) => e.severity === 'error').length === 0,
-        parseTime: Date.now() - startTime,
+        parseTime: Math.max(1, Math.round(performance.now() - startTime)),
       }
     } catch (error) {
       errors.push({
@@ -87,7 +87,7 @@ export class RustParser {
         crate: null,
         errors,
         success: false,
-        parseTime: Date.now() - startTime,
+        parseTime: Math.max(1, Math.round(performance.now() - startTime)),
       }
     }
   }
@@ -101,47 +101,25 @@ export class RustParser {
     const items: ParsedItem[] = []
     const submodules: ParsedModule[] = []
 
-    // Use Tree-sitter queries to find all top-level items
-    try {
-      const language = this.parser.getLanguage()
-      const query = new Parser.Query(language, RUST_QUERIES.TOP_LEVEL_ITEMS)
-      const captures = query.captures(node)
-
-      for (const capture of captures) {
-        const item = this.extractItem(capture.node, sourceCode)
+    // Use manual tree walking to find all top-level items
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i)
+      if (child) {
+        const item = this.extractItem(child, sourceCode)
         if (item) {
+          items.push(item)
+
           if (item.type === 'mod') {
-            // Handle submodules
-            const submodule = await this.extractModule(
-              capture.node,
-              sourceCode,
-              item.name,
-              `${path}/${item.name}.rs`,
-            )
-            submodules.push(submodule)
-          } else {
-            items.push(item)
-          }
-        }
-      }
-    } catch (error) {
-      // Fallback to manual tree walking if queries fail
-      for (let i = 0; i < node.childCount; i++) {
-        const child = node.child(i)
-        if (child) {
-          const item = this.extractItem(child, sourceCode)
-          if (item) {
-            if (item.type === 'mod') {
-              // Handle submodules
+            // Also extract the module's contents as a submodule
+            const bodyNode = child.childForFieldName('body')
+            if (bodyNode) {
               const submodule = await this.extractModule(
-                child,
+                bodyNode,
                 sourceCode,
                 item.name,
                 `${path}/${item.name}.rs`,
               )
               submodules.push(submodule)
-            } else {
-              items.push(item)
             }
           }
         }
@@ -556,10 +534,23 @@ export class RustParser {
   ): string[] {
     const attributes: string[] = []
 
+    // Look for attribute items in the children
     for (let i = 0; i < node.childCount; i++) {
       const child = node.child(i)
       if (child?.type === 'attribute_item') {
         attributes.push(this.getNodeText(child, sourceCode))
+      }
+    }
+
+    // Also check the parent node for attributes that come before this item
+    if (node.parent) {
+      const parentNode = node.parent
+      for (let i = 0; i < parentNode.childCount; i++) {
+        const child = parentNode.child(i)
+        if (child === node) break // Stop when we reach the current node
+        if (child?.type === 'attribute_item') {
+          attributes.push(this.getNodeText(child, sourceCode))
+        }
       }
     }
 
