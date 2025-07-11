@@ -3,6 +3,7 @@ use ra_ap_syntax::{
     AstNode, SourceFile, TextRange,
 };
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 use wasm_bindgen::prelude::*;
 
 // Initialize panic hook for better error messages in WASM
@@ -11,13 +12,15 @@ pub fn init() {
     console_error_panic_hook::set_once();
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ParseRequest {
     pub code: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ParseResponse {
     pub success: bool,
@@ -26,7 +29,8 @@ pub struct ParseResponse {
     pub errors: Vec<ParseError>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CrateInfo {
     pub name: String,
@@ -34,7 +38,8 @@ pub struct CrateInfo {
     pub root_module: ModuleInfo,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ModuleInfo {
     pub name: String,
@@ -43,7 +48,8 @@ pub struct ModuleInfo {
     pub location: SourceLocation,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemInfo {
     #[serde(rename = "type")]
@@ -70,7 +76,8 @@ pub struct ItemInfo {
     pub trait_name: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterInfo {
     pub name: String,
@@ -79,7 +86,8 @@ pub struct ParameterInfo {
     pub is_mutable: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct FieldInfo {
     pub name: String,
@@ -87,14 +95,16 @@ pub struct FieldInfo {
     pub visibility: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct VariantInfo {
     pub name: String,
     pub discriminant: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceLocation {
     pub start_line: u32,
@@ -105,7 +115,8 @@ pub struct SourceLocation {
     pub end_byte: u32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ParseError {
     pub message: String,

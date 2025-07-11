@@ -47,17 +47,17 @@ export async function handleParseRequest(
     const response: ParserResponse = {
       success: result.success,
       parseTime: result.parseTime,
-      itemCount: result.crate?.rootModule.items.length || 0,
+      itemCount: result.crateInfo?.rootModule.items.length || 0,
       errors: result.errors.map((error) => ({
         message: error.message,
         severity: error.severity,
-        location: error.location,
+        location: error.location || undefined,
       })),
     }
 
     // Include parsed items if successful
-    if (result.success && result.crate) {
-      response.items = result.crate.rootModule.items.map((item) => ({
+    if (result.success && result.crateInfo) {
+      response.items = result.crateInfo.rootModule.items.map((item) => ({
         type: item.type,
         name: item.name,
         visibility: item.visibility,

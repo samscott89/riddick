@@ -1,24 +1,12 @@
 import { SELF, env } from 'cloudflare:test'
 import { describe, it, expect } from 'vitest'
+import type { ParseResponse } from '../src/parser/generated/ParseResponse'
 
 const API_KEY = env.API_KEY
 
 interface ParseEndpointResponse {
   success: boolean
-  result?: {
-    success: boolean
-    itemCount: number
-    items: Array<{
-      type: string
-      name: string
-      visibility?: string
-      location: {
-        startLine: number
-        endLine: number
-      }
-    }>
-    parseTime: number
-  }
+  result?: ParseResponse
   error?: string
 }
 

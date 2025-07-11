@@ -14,6 +14,9 @@
     "format:fix": "prettier --write \"{src,test}/**/*.{ts,json}\"",
     "check": "npm run build && npm run lint && npm run format && npm test",
     "check:fix": "npm run format:fix && npm run lint:fix && npm run check",
+    "build:wasm": "cd rust-parser && wasm-pack build --target web --out-dir ../src/wasm",
+    "generate:types": "cd rust-parser && cargo test export_bindings && mkdir -p ../src/parser/generated && cp bindings/*.ts ../src/parser/generated/ && cd .. && prettier --write \"src/parser/generated/*.ts\"",
+    "build:all": "npm run generate:types && npm run build:wasm",
     "migrate:local": "node scripts/migrate.js",
     "migrate:remote": "node scripts/migrate.js --production",
     "db:create": "wrangler d1 create riddick-db"

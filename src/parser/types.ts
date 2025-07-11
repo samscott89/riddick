@@ -1,12 +1,38 @@
-export interface SourceLocation {
-  startLine: number
-  startColumn: number
-  endLine: number
-  endColumn: number
-  startByte: number
-  endByte: number
+// Import the types we need for aliases and wrapper types
+import type { CrateInfo } from './generated/CrateInfo'
+import type { FieldInfo } from './generated/FieldInfo'
+import type { ItemInfo } from './generated/ItemInfo'
+import type { ModuleInfo } from './generated/ModuleInfo'
+import type { ParameterInfo } from './generated/ParameterInfo'
+import type { ParseResponse as GeneratedParseResponse } from './generated/ParseResponse'
+import type { VariantInfo } from './generated/VariantInfo'
+
+// Direct re-exports of generated types - no more manual types!
+export type { CrateInfo } from './generated/CrateInfo'
+export type { FieldInfo } from './generated/FieldInfo'
+export type { ItemInfo } from './generated/ItemInfo'
+export type { ModuleInfo } from './generated/ModuleInfo'
+export type { ParameterInfo } from './generated/ParameterInfo'
+export type { ParseError } from './generated/ParseError'
+export type { ParseRequest } from './generated/ParseRequest'
+export type { ParseResponse } from './generated/ParseResponse'
+export type { SourceLocation } from './generated/SourceLocation'
+export type { VariantInfo } from './generated/VariantInfo'
+
+// Create a simple wrapper for ParseResponse with number instead of bigint
+export type ParseResult = Omit<GeneratedParseResponse, 'parseTime'> & {
+  parseTime: number
 }
 
+// Simple type aliases that make more sense
+export type ParsedItem = ItemInfo
+export type ParsedCrate = CrateInfo
+export type ParsedModule = ModuleInfo
+export type FunctionParameter = ParameterInfo
+export type StructField = FieldInfo
+export type EnumVariant = VariantInfo
+
+// Keep the ItemType enum as it's useful
 export enum ItemType {
   FUNCTION = 'function',
   STRUCT = 'struct',
@@ -21,77 +47,11 @@ export enum ItemType {
   MACRO = 'macro',
 }
 
-export interface ParsedItem {
-  type: ItemType
-  name: string
-  sourceCode: string
-  location: SourceLocation
-  visibility?: 'pub' | 'pub(crate)' | 'pub(super)' | 'pub(in path)' | 'private'
-  attributes?: string[]
-  genericParameters?: string[]
-  // Type-specific fields
-  parameters?: FunctionParameter[]
-  returnType?: string
-  fields?: StructField[]
-  variants?: EnumVariant[]
-  traitName?: string
-  implType?: string
-  associatedItems?: ParsedItem[]
-}
-
-export interface FunctionParameter {
-  name: string
-  type: string
-  isSelf?: boolean
-  isMutable?: boolean
-}
-
-export interface StructField {
-  name: string
-  type: string
-  visibility?: 'pub' | 'pub(crate)' | 'pub(super)' | 'pub(in path)' | 'private'
-}
-
-export interface EnumVariant {
-  name: string
-  fields?: StructField[]
-  discriminant?: string
-}
-
-export interface ParsedModule {
-  name: string
-  path: string
-  items: ParsedItem[]
-  location: SourceLocation
-  visibility?: 'pub' | 'pub(crate)' | 'pub(super)' | 'pub(in path)' | 'private'
-  attributes?: string[]
-  submodules?: ParsedModule[]
-}
-
-export interface ParsedCrate {
-  name: string
-  modules: ParsedModule[]
-  rootModule: ParsedModule
-  errors: ParseError[]
-}
-
-export interface ParseError {
-  message: string
-  location?: SourceLocation
-  severity: 'error' | 'warning'
-}
-
+// ParserOptions for function parameters (optional fields)
 export interface ParserOptions {
   includeComments?: boolean
   includeDocComments?: boolean
   includePrivateItems?: boolean
   maxDepth?: number
   timeout?: number
-}
-
-export interface ParseResult {
-  crate: ParsedCrate | null
-  errors: ParseError[]
-  success: boolean
-  parseTime: number
 }

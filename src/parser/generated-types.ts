@@ -1,0 +1,12 @@
+// Re-export all generated types with their original names
+export type { SourceLocation } from './generated/SourceLocation'
+export type { ParseError } from './generated/ParseError'
+export type { ParameterInfo } from './generated/ParameterInfo'
+export type { FieldInfo } from './generated/FieldInfo'
+export type { VariantInfo } from './generated/VariantInfo'
+export type { ItemInfo } from './generated/ItemInfo'
+export type { ModuleInfo } from './generated/ModuleInfo'
+export type { CrateInfo } from './generated/CrateInfo'
+export type { ParseRequest } from './generated/ParseRequest'
+export type { ParseResponse } from './generated/ParseResponse'
+export type { ParserOptions } from './generated/ParserOptions'
