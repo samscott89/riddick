@@ -29,3 +29,4 @@ dist/
 # This directory is used by Wrangler to store local state, such as the last deployed version.
 # It is not needed for the project to function and can be safely ignored.
 .wrangler/ 
+.dev.vars

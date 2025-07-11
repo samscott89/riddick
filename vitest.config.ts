@@ -13,9 +13,6 @@ export default defineWorkersProject(async () => {
   const migrationsPath = path.join(__dirname, "migrations");
   const migrations = await readD1Migrations(migrationsPath);
 
-
-
-
   const options: WorkersProjectConfigExport = {
     plugins: [
       wasm()
@@ -28,8 +25,12 @@ export default defineWorkersProject(async () => {
             configPath: "./wrangler.toml",
           },
           miniflare: {
-            // Add a test-only binding for migrations, so we can apply them in a setup file
-            bindings: { TEST_MIGRATIONS: migrations },
+            bindings: {
+              // Add a test-only binding for migrations, so we can apply them in a setup file
+              TEST_MIGRATIONS: migrations,
+              // test API key for authentication
+              API_KEY: "test-api-key"
+            },
             // kvNamespaces: ["TEST_NAMESPACE"],
           }
         },

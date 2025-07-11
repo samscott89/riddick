@@ -15,16 +15,6 @@ let wasmInitialized = false
 async function ensureWasmInitialized() {
   if (!wasmInitialized) {
     try {
-
-
-      // if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-      //   console.log(process.versions.node);
-      //   throw new Error('WASM parser cannot be used in Node.js environment. Please use it in a browser or Cloudflare Workers.')
-      // } else {
-      //   throw new Error('WASM parser not initialized. Ensure you are using the correct environment.')
-      // }
-
-      // const module = await import('./wasm/rust_parser_bg.wasm')
       await init({ module_or_path: wasmModule })
       wasmInitialized = true
     } catch (error) {
@@ -39,7 +29,6 @@ export async function parseRustCode(
 ): Promise<ParseResult> {
   await ensureWasmInitialized()
   try {
-
     const result = parse_rust_code(code)
 
     // The result should match our ParseResponse type from the Rust code

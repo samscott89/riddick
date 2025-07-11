@@ -15,5 +15,9 @@ name = "riddick-production"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "riddick-db-production"
-database_id = "production"
+database_id = "57929bff-19f7-4bf3-aa36-2832694793dc"
 migrations_dir = "migrations"
+
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true

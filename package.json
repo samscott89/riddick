@@ -59,6 +59,9 @@
     "wrangler": "^4.24.0"
   },
   "dependencies": {
-    "web-tree-sitter": "^0.25.6"
+    "@hono/zod-validator": "^0.7.0",
+    "hono": "^4.8.4",
+    "web-tree-sitter": "^0.25.6",
+    "zod": "^4.0.5"
   }
 }
