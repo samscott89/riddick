@@ -1,9 +1,9 @@
-use wasm_bindgen::prelude::*;
 use ra_ap_syntax::{
-    ast::{self, HasModuleItem, HasName, HasVisibility, HasGenericParams},
+    ast::{self, HasGenericParams, HasModuleItem, HasName, HasVisibility},
     AstNode, SourceFile, TextRange,
 };
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 // Initialize panic hook for better error messages in WASM
 #[wasm_bindgen(start)]
@@ -54,17 +54,17 @@ pub struct ItemInfo {
     pub source_code: String,
     pub attributes: Vec<String>,
     pub generic_parameters: Vec<String>,
-    
+
     // Function-specific fields
     pub parameters: Option<Vec<ParameterInfo>>,
     pub return_type: Option<String>,
-    
+
     // Struct-specific fields
     pub fields: Option<Vec<FieldInfo>>,
-    
+
     // Enum-specific fields
     pub variants: Option<Vec<VariantInfo>>,
-    
+
     // Impl-specific fields
     pub impl_type: Option<String>,
     pub trait_name: Option<String>,
@@ -117,7 +117,7 @@ pub struct ParseError {
 pub fn parse_rust_code(code: &str) -> Result<JsValue, JsValue> {
     let parsed = SourceFile::parse(code, ra_ap_syntax::Edition::Edition2024);
     let _syntax_node = parsed.syntax_node();
-    
+
     // Extract errors
     let errors: Vec<ParseError> = parsed
         .errors()
@@ -128,24 +128,24 @@ pub fn parse_rust_code(code: &str) -> Result<JsValue, JsValue> {
             location: None, // TODO: Extract location from error
         })
         .collect();
-    
+
     // Extract module information
     let source_file = parsed.tree();
     let root_module = extract_module_info(&source_file, "main", "main.rs");
-    
+
     let crate_info = CrateInfo {
         name: "unnamed".to_string(),
         modules: vec![root_module.clone()],
         root_module,
     };
-    
+
     let response = ParseResponse {
         success: errors.is_empty(),
         parse_time: 1, // Fixed for WASM compatibility
         crate_info: Some(crate_info),
         errors,
     };
-    
+
     // Convert to JsValue using serde-wasm-bindgen
     serde_wasm_bindgen::to_value(&response)
         .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
@@ -153,16 +153,16 @@ pub fn parse_rust_code(code: &str) -> Result<JsValue, JsValue> {
 
 fn extract_module_info(source_file: &SourceFile, name: &str, path: &str) -> ModuleInfo {
     let mut items = Vec::new();
-    
+
     for item in source_file.items() {
         if let Some(item_info) = extract_item_info(item) {
             items.push(item_info);
         }
     }
-    
+
     let syntax = source_file.syntax();
     let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
-    
+
     ModuleInfo {
         name: name.to_string(),
         path: path.to_string(),
@@ -193,12 +193,12 @@ fn extract_function_info(func: ast::Fn) -> Option<ItemInfo> {
     let syntax = func.syntax();
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
-    
+
     let parameters = extract_parameters(&func);
     let return_type = func.ret_type().map(|rt| rt.syntax().text().to_string());
     let generic_parameters = extract_generic_params(func.generic_param_list());
     let attributes = extract_attributes(&func);
-    
+
     Some(ItemInfo {
         item_type: "function".to_string(),
         name,
@@ -222,11 +222,11 @@ fn extract_struct_info(s: ast::Struct) -> Option<ItemInfo> {
     let syntax = s.syntax();
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
-    
+
     let fields = extract_struct_fields(&s);
     let generic_parameters = extract_generic_params(s.generic_param_list());
     let attributes = extract_attributes(&s);
-    
+
     Some(ItemInfo {
         item_type: "struct".to_string(),
         name,
@@ -250,11 +250,11 @@ fn extract_enum_info(e: ast::Enum) -> Option<ItemInfo> {
     let syntax = e.syntax();
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
-    
+
     let variants = extract_enum_variants(&e);
     let generic_parameters = extract_generic_params(e.generic_param_list());
     let attributes = extract_attributes(&e);
-    
+
     Some(ItemInfo {
         item_type: "enum".to_string(),
         name,
@@ -278,10 +278,10 @@ fn extract_trait_info(t: ast::Trait) -> Option<ItemInfo> {
     let syntax = t.syntax();
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
-    
+
     let generic_parameters = extract_generic_params(t.generic_param_list());
     let attributes = extract_attributes(&t);
-    
+
     Some(ItemInfo {
         item_type: "trait".to_string(),
         name,
@@ -302,17 +302,18 @@ fn extract_trait_info(t: ast::Trait) -> Option<ItemInfo> {
 fn extract_impl_info(i: ast::Impl) -> Option<ItemInfo> {
     let impl_type = i.self_ty()?.syntax().text().to_string();
     let trait_name = i.trait_().map(|t| t.syntax().text().to_string());
-    let name = trait_name.as_ref()
+    let name = trait_name
+        .as_ref()
         .map(|t| format!("{} for {}", t, impl_type))
         .unwrap_or(impl_type.clone());
-    
+
     let syntax = i.syntax();
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
-    
+
     let generic_parameters = extract_generic_params(i.generic_param_list());
     let attributes = extract_attributes(&i);
-    
+
     Some(ItemInfo {
         item_type: "impl".to_string(),
         name,
@@ -337,7 +338,7 @@ fn extract_module_item_info(m: ast::Module) -> Option<ItemInfo> {
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
     let attributes = extract_attributes(&m);
-    
+
     Some(ItemInfo {
         item_type: "mod".to_string(),
         name,
@@ -361,10 +362,10 @@ fn extract_use_info(u: ast::Use) -> Option<ItemInfo> {
     let location = text_range_to_location(syntax.text_range(), &source_code);
     let visibility = extract_visibility(u.visibility());
     let attributes = extract_attributes(&u);
-    
+
     // Extract the use path
     let name = u.use_tree()?.syntax().text().to_string();
-    
+
     Some(ItemInfo {
         item_type: "use".to_string(),
         name,
@@ -389,7 +390,7 @@ fn extract_const_info(c: ast::Const) -> Option<ItemInfo> {
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
     let attributes = extract_attributes(&c);
-    
+
     Some(ItemInfo {
         item_type: "const".to_string(),
         name,
@@ -414,7 +415,7 @@ fn extract_static_info(s: ast::Static) -> Option<ItemInfo> {
     let source_code = syntax.text().to_string();
     let location = text_range_to_location(syntax.text_range(), &source_code);
     let attributes = extract_attributes(&s);
-    
+
     Some(ItemInfo {
         item_type: "static".to_string(),
         name,
@@ -440,7 +441,7 @@ fn extract_type_alias_info(t: ast::TypeAlias) -> Option<ItemInfo> {
     let location = text_range_to_location(syntax.text_range(), &source_code);
     let generic_parameters = extract_generic_params(t.generic_param_list());
     let attributes = extract_attributes(&t);
-    
+
     Some(ItemInfo {
         item_type: "type_alias".to_string(),
         name,
@@ -480,51 +481,58 @@ fn extract_visibility(vis: Option<ast::Visibility>) -> String {
 
 fn extract_parameters(func: &ast::Fn) -> Vec<ParameterInfo> {
     let mut params = Vec::new();
-    
+
     if let Some(param_list) = func.param_list() {
+        // Handle self parameter separately
+        if let Some(self_param) = param_list.self_param() {
+            let self_text = self_param.syntax().text().to_string();
+            params.push(ParameterInfo {
+                name: "self".to_string(),
+                param_type: "Self".to_string(),
+                is_self: true,
+                is_mutable: self_text.contains("mut"),
+            });
+        }
+
+        // Handle regular parameters
         for param in param_list.params() {
-            let name = param.syntax().text().to_string();
-            
-            // Check if it's a self parameter
-            if name.contains("self") {
-                params.push(ParameterInfo {
-                    name: "self".to_string(),
-                    param_type: "Self".to_string(),
-                    is_self: true,
-                    is_mutable: name.contains("mut"),
-                });
-            } else {
-                // For regular parameters, try to extract name and type
-                let param_text = param.syntax().text().to_string();
-                let parts: Vec<&str> = param_text.split(':').collect();
-                let param_name = parts.get(0).unwrap_or(&"").trim().to_string();
-                let param_type = parts.get(1).unwrap_or(&"").trim().to_string();
-                
-                params.push(ParameterInfo {
-                    name: param_name,
-                    param_type,
-                    is_self: false,
-                    is_mutable: name.contains("mut"),
-                });
+            let param_text = param.syntax().text().to_string();
+
+            // Skip if this looks like a self parameter (shouldn't happen with proper self_param() handling)
+            if param_text.trim() == "self" || param_text.trim() == "mut self" {
+                continue;
             }
+
+            // Extract name and type
+            let parts: Vec<&str> = param_text.split(':').collect();
+            let param_name = parts.get(0).unwrap_or(&"").trim().to_string();
+            let param_type = parts.get(1).unwrap_or(&"").trim().to_string();
+
+            params.push(ParameterInfo {
+                name: param_name.clone(),
+                param_type,
+                is_self: false,
+                is_mutable: param_name.contains("mut"),
+            });
         }
     }
-    
+
     params
 }
 
 fn extract_struct_fields(s: &ast::Struct) -> Vec<FieldInfo> {
     let mut fields = Vec::new();
-    
+
     match s.field_list() {
         Some(ast::FieldList::RecordFieldList(record_fields)) => {
             for field in record_fields.fields() {
                 if let Some(name) = field.name() {
-                    let field_type = field.ty()
+                    let field_type = field
+                        .ty()
                         .map(|t| t.syntax().text().to_string())
                         .unwrap_or_default();
                     let visibility = extract_visibility(field.visibility());
-                    
+
                     fields.push(FieldInfo {
                         name: name.text().to_string(),
                         field_type,
@@ -535,11 +543,12 @@ fn extract_struct_fields(s: &ast::Struct) -> Vec<FieldInfo> {
         }
         Some(ast::FieldList::TupleFieldList(tuple_fields)) => {
             for (i, field) in tuple_fields.fields().enumerate() {
-                let field_type = field.ty()
+                let field_type = field
+                    .ty()
                     .map(|t| t.syntax().text().to_string())
                     .unwrap_or_default();
                 let visibility = extract_visibility(field.visibility());
-                
+
                 fields.push(FieldInfo {
                     name: i.to_string(),
                     field_type,
@@ -549,19 +558,18 @@ fn extract_struct_fields(s: &ast::Struct) -> Vec<FieldInfo> {
         }
         None => {}
     }
-    
+
     fields
 }
 
 fn extract_enum_variants(e: &ast::Enum) -> Vec<VariantInfo> {
     let mut variants = Vec::new();
-    
+
     if let Some(variant_list) = e.variant_list() {
         for variant in variant_list.variants() {
             if let Some(name) = variant.name() {
-                let discriminant = variant.expr()
-                    .map(|e| e.syntax().text().to_string());
-                
+                let discriminant = variant.expr().map(|e| e.syntax().text().to_string());
+
                 variants.push(VariantInfo {
                     name: name.text().to_string(),
                     discriminant,
@@ -569,13 +577,13 @@ fn extract_enum_variants(e: &ast::Enum) -> Vec<VariantInfo> {
             }
         }
     }
-    
+
     variants
 }
 
 fn extract_generic_params(generic_params: Option<ast::GenericParamList>) -> Vec<String> {
     let mut params = Vec::new();
-    
+
     if let Some(param_list) = generic_params {
         for param in param_list.generic_params() {
             match param {
@@ -597,14 +605,14 @@ fn extract_generic_params(generic_params: Option<ast::GenericParamList>) -> Vec<
             }
         }
     }
-    
+
     params
 }
 
 fn extract_attributes<N: AstNode>(node: &N) -> Vec<String> {
     let mut attributes = Vec::new();
     let syntax = node.syntax();
-    
+
     // Look for attribute items before this node
     for child in syntax.children_with_tokens() {
         if let Some(node) = child.as_node() {
@@ -613,18 +621,18 @@ fn extract_attributes<N: AstNode>(node: &N) -> Vec<String> {
             }
         }
     }
-    
+
     attributes
 }
 
 fn text_range_to_location(range: TextRange, source: &str) -> SourceLocation {
     let start = range.start().into();
     let end = range.end().into();
-    
+
     // Calculate line and column numbers
     let (start_line, start_column) = offset_to_line_col(source, start);
     let (end_line, end_column) = offset_to_line_col(source, end);
-    
+
     SourceLocation {
         start_line,
         start_column,
@@ -638,7 +646,7 @@ fn text_range_to_location(range: TextRange, source: &str) -> SourceLocation {
 fn offset_to_line_col(source: &str, offset: u32) -> (u32, u32) {
     let mut line = 1;
     let mut col = 1;
-    
+
     for (i, ch) in source.char_indices() {
         if i as u32 >= offset {
             break;
@@ -650,6 +658,6 @@ fn offset_to_line_col(source: &str, offset: u32) -> (u32, u32) {
             col += 1;
         }
     }
-    
+
     (line, col)
 }

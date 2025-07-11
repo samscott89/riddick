@@ -15,7 +15,16 @@ export interface ParserResponse {
   success: boolean
   parseTime: number
   itemCount: number
-  errors: Array<{ message: string; severity: string; location?: { startLine: number; startColumn: number; endLine: number; endColumn: number } }>
+  errors: Array<{
+    message: string
+    severity: string
+    location?: {
+      startLine: number
+      startColumn: number
+      endLine: number
+      endColumn: number
+    }
+  }>
   items?: Array<{
     type: string
     name: string
@@ -33,10 +42,7 @@ export async function handleParseRequest(
   const startTime = Date.now()
 
   try {
-    const result = await parseRustCode(
-      request.code, 
-      request.options || {}
-    )
+    const result = await parseRustCode(request.code, request.options || {})
 
     const response: ParserResponse = {
       success: result.success,

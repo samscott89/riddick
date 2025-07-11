@@ -18,9 +18,7 @@ describe('Parser Integration Tests', () => {
       expect(crate.rootModule).toStrictEqual(crate.modules[0])
 
       // Verify we have different types of items
-      const itemTypes = new Set(
-        crate.rootModule.items.map((item) => item.type),
-      )
+      const itemTypes = new Set(crate.rootModule.items.map((item) => item.type))
       expect(itemTypes.has('struct' as ItemType)).toBe(true)
       expect(itemTypes.has('enum' as ItemType)).toBe(true)
       expect(itemTypes.has('trait' as ItemType)).toBe(true)
@@ -118,9 +116,7 @@ describe('Parser Integration Tests', () => {
       expect(struct.fields).toBeDefined()
       expect(struct.fields!.length).toBe(4)
 
-      const publicField = struct.fields!.find(
-        (f) => f.name === 'public_field',
-      )
+      const publicField = struct.fields!.find((f) => f.name === 'public_field')
       expect(publicField?.visibility).toBe('pub')
 
       const privateField = struct.fields!.find(
@@ -341,9 +337,7 @@ describe('Parser Integration Tests', () => {
       const items = result.crate!.rootModule.items
       expect(items.length).toBeGreaterThan(3)
 
-      const asyncFn = items.find(
-        (item) => item.name === 'fetch_and_process',
-      )
+      const asyncFn = items.find((item) => item.name === 'fetch_and_process')
       expect(asyncFn?.type).toBe('function')
     })
   })

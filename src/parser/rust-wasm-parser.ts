@@ -1,4 +1,10 @@
-import { ParsedItem, ParseResult, SourceLocation, ParsedCrate, ParserOptions } from './types'
+import {
+  ParsedItem,
+  ParseResult,
+  SourceLocation,
+  ParsedCrate,
+  ParserOptions,
+} from './types'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -10,7 +16,7 @@ let wasmInitialized = false
 async function ensureWasmInitialized() {
   if (!wasmInitialized) {
     const wasmInit = await import('./wasm/rust_parser.js')
-    
+
     let wasmBytes: ArrayBuffer
     if (typeof window === 'undefined') {
       // Node.js environment (tests)
@@ -24,7 +30,7 @@ async function ensureWasmInitialized() {
       const response = await fetch(wasmUrl)
       wasmBytes = await response.arrayBuffer()
     }
-    
+
     await wasmInit.default(wasmBytes)
     wasmInit.init() // Initialize panic hook
     wasmModule = wasmInit
@@ -38,9 +44,9 @@ export async function parseRustCode(
 ): Promise<ParseResult> {
   try {
     await ensureWasmInitialized()
-    
+
     const result = wasmModule.parse_rust_code(code)
-    
+
     // The result should match our ParseResponse type from the Rust code
     return {
       success: result.success,
@@ -88,7 +94,7 @@ function mapModuleInfo(moduleInfo: any) {
 
 function mapItemInfo(itemInfo: any): ParsedItem {
   return {
-    type: itemInfo.itemType as any, // Type assertion needed for enum conversion
+    type: itemInfo.type as any, // Type assertion needed for enum conversion
     name: itemInfo.name,
     visibility: itemInfo.visibility,
     location: mapLocation(itemInfo.location),
