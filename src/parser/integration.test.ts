@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 
-import { TEST_FIXTURES } from './test-fixtures'
-import type { ItemType, ParseResult } from './types'
 import { parseRustCode } from './rust-wasm-parser'
+import { TEST_FIXTURES } from './test-fixtures'
+import type { ItemType } from './types'
 
 describe('Parser Integration Tests', () => {
   describe('end-to-end parsing workflows', () => {

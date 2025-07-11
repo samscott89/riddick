@@ -1,10 +1,7 @@
-import {
-  SELF
-} from "cloudflare:test";
+import { SELF } from 'cloudflare:test'
 import { describe, it, expect } from 'vitest'
 
 describe('Worker', () => {
-
   describe('GET /health', () => {
     it('should return 200 status', async () => {
       const res = await SELF.fetch('http://localhost/health', {

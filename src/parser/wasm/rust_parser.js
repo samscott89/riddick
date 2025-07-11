@@ -1,3 +1,4 @@
+/* eslint-disable */
 let wasm;
 
 let WASM_VECTOR_LEN = 0;

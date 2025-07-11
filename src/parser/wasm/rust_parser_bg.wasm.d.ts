@@ -1,5 +1,4 @@
-/* tslint:disable */
-/* eslint-disable */
+ 
 export const memory: WebAssembly.Memory;
 export const init: () => void;
 export const parse_rust_code: (a: number, b: number) => [number, number, number];

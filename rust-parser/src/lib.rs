@@ -115,6 +115,8 @@ pub struct ParseError {
 
 #[wasm_bindgen]
 pub fn parse_rust_code(code: &str) -> Result<JsValue, JsValue> {
+    let start = std::time::Instant::now();
+
     let parsed = SourceFile::parse(code, ra_ap_syntax::Edition::Edition2024);
     let _syntax_node = parsed.syntax_node();
 
@@ -138,10 +140,11 @@ pub fn parse_rust_code(code: &str) -> Result<JsValue, JsValue> {
         modules: vec![root_module.clone()],
         root_module,
     };
+    let parse_time = start.elapsed();
 
     let response = ParseResponse {
         success: errors.is_empty(),
-        parse_time: 1, // Fixed for WASM compatibility
+        parse_time: parse_time.as_millis() as u64,
         crate_info: Some(crate_info),
         errors,
     };

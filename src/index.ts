@@ -1,38 +1,37 @@
+import { zValidator } from '@hono/zod-validator'
+import { Hono } from 'hono'
+import { bearerAuth } from 'hono/bearer-auth'
+import { logger } from 'hono/logger'
+import { prettyJSON } from 'hono/pretty-json'
+import { z } from 'zod'
+
 import { handleParseRequest, EXAMPLE_REQUESTS } from './parser-endpoint'
 
-
-import { Hono } from "hono";
-import { zValidator } from '@hono/zod-validator'
-import { z } from "zod";
-import { bearerAuth } from "hono/bearer-auth";
-import { logger } from "hono/logger";
-import { prettyJSON } from "hono/pretty-json";
-
 type Bindings = {
-  API_KEY: string;
-};
+  API_KEY: string
+}
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings }>()
 
-app.use("/parse", prettyJSON(), logger(), async (c, next) => {
-  const auth = bearerAuth({ token: c.env.API_KEY });
-  return auth(c, next);
-});
-app.use("/parse/*", prettyJSON(), logger(), async (c, next) => {
-  const auth = bearerAuth({ token: c.env.API_KEY });
-  return auth(c, next);
-});
+app.use('/parse', prettyJSON(), logger(), async (c, next) => {
+  const auth = bearerAuth({ token: c.env.API_KEY })
+  return auth(c, next)
+})
+app.use('/parse/*', prettyJSON(), logger(), async (c, next) => {
+  const auth = bearerAuth({ token: c.env.API_KEY })
+  return auth(c, next)
+})
 
 // Paste this code at the end of the src/index.ts file
 
-app.get("/health", async (c) => {
+app.get('/health', async (c) => {
   return c.json({
-    status: "ok",
+    status: 'ok',
     timestamp: new Date().toISOString(),
-  });
-});
+  })
+})
 
-app.post("/parse", async (c) => {
+app.post('/parse', async (c) => {
   try {
     const parseRequest = (await c.req.json()) as { code: string }
     const result = await handleParseRequest(parseRequest)
@@ -40,42 +39,48 @@ app.post("/parse", async (c) => {
     return c.json({
       success: true,
       result,
-    });
+    })
   } catch (error) {
-    return c.json({
-      success: false,
-      error: String(error),
-    }, {
-      status: 400,
-    });
+    return c.json(
+      {
+        success: false,
+        error: String(error),
+      },
+      {
+        status: 400,
+      },
+    )
   }
-});
+})
 
-app.get("/parse/examples", async (c) => {
+app.get('/parse/examples', async (c) => {
   return c.json({
     success: true,
     examples: EXAMPLE_REQUESTS,
-  });
-});
+  })
+})
 
-
-app.get("/parse/test/:id",
+app.get(
+  '/parse/test/:id',
   zValidator(
     'param',
     z.object({
       id: z.coerce.number(),
-    })
+    }),
   ),
   async (c) => {
     const { id } = c.req.valid('param')
-    const example = EXAMPLE_REQUESTS[id];
+    const example = EXAMPLE_REQUESTS[id]
     if (!example) {
-      return c.json({
-        success: false,
-        error: "Example not found",
-      }, {
-        status: 404,
-      });
+      return c.json(
+        {
+          success: false,
+          error: 'Example not found',
+        },
+        {
+          status: 404,
+        },
+      )
     }
 
     try {
@@ -86,17 +91,17 @@ app.get("/parse/test/:id",
         result,
       })
     } catch (error) {
-      return c.json({
-        success: false,
-        error: String(error),
-      }, {
-        status: 500,
-      })
+      return c.json(
+        {
+          success: false,
+          error: String(error),
+        },
+        {
+          status: 500,
+        },
+      )
     }
-  });
+  },
+)
 
-
-export default app;
-
-
-
+export default app
