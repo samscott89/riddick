@@ -10,9 +10,9 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(TEST_FIXTURES.COMPLETE_MODULE)
 
       expect(result.success).toBe(true)
-      expect(result.crate).toBeDefined()
+      expect(result.crateInfo).toBeDefined()
 
-      const crate = result.crate!
+      const crate = result.crateInfo!
       expect(crate.name).toBe('unnamed')
       expect(crate.modules).toHaveLength(1)
       expect(crate.rootModule).toStrictEqual(crate.modules[0])
@@ -31,9 +31,9 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(sourceCode)
 
       expect(result.success).toBe(true)
-      expect(result.crate?.rootModule.items).toHaveLength(1)
+      expect(result.crateInfo?.rootModule.items).toHaveLength(1)
 
-      const func = result.crate!.rootModule.items[0]
+      const func = result.crateInfo!.rootModule.items[0]
       expect(func.sourceCode).toContain('fn greet')
       expect(func.sourceCode).toContain('format!')
       expect(func.location.startLine).toBeGreaterThan(0)
@@ -68,7 +68,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(complexCode)
       expect(result.success).toBe(true)
 
-      const items = result.crate!.rootModule.items
+      const items = result.crateInfo!.rootModule.items
       const modules = items.filter((item) => item.type === 'mod')
       expect(modules).toHaveLength(1)
       expect(modules[0].name).toBe('outer')
@@ -90,7 +90,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(functionCode)
       expect(result.success).toBe(true)
 
-      const func = result.crate!.rootModule.items[0]
+      const func = result.crateInfo!.rootModule.items[0]
       expect(func.parameters).toBeDefined()
       expect(func.parameters!.length).toBeGreaterThan(3)
 
@@ -112,7 +112,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(structCode)
       expect(result.success).toBe(true)
 
-      const struct = result.crate!.rootModule.items[0]
+      const struct = result.crateInfo!.rootModule.items[0]
       expect(struct.fields).toBeDefined()
       expect(struct.fields!.length).toBe(4)
 
@@ -150,7 +150,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(genericCode)
       expect(result.success).toBe(true)
 
-      const items = result.crate!.rootModule.items
+      const items = result.crateInfo!.rootModule.items
       expect(items).toHaveLength(2)
 
       const struct = items.find((item) => item.type === 'struct')
@@ -179,7 +179,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(enumCode)
       expect(result.success).toBe(true)
 
-      const enumItem = result.crate!.rootModule.items[0]
+      const enumItem = result.crateInfo!.rootModule.items[0]
       expect(enumItem.variants).toBeDefined()
       expect(enumItem.variants!.length).toBe(4)
 
@@ -212,7 +212,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(traitCode)
       expect(result.success).toBe(true)
 
-      const items = result.crate!.rootModule.items
+      const items = result.crateInfo!.rootModule.items
       expect(items).toHaveLength(2)
 
       const trait = items.find((item) => item.type === 'trait')
@@ -258,7 +258,7 @@ describe('Parser Integration Tests', () => {
 
       const result = await parseRustCode(mixedCode)
       // Even with errors, we might still extract some valid items
-      expect(result.crate).toBeDefined()
+      expect(result.crateInfo).toBeDefined()
     })
   })
 
@@ -271,7 +271,7 @@ describe('Parser Integration Tests', () => {
       expect(result.success).toBe(true)
       expect(parseTime).toBeLessThan(3000) // Should complete within 3 seconds
       expect(result.parseTime).toBeGreaterThan(0)
-      expect(result.crate?.rootModule.items.length).toBeGreaterThan(50)
+      expect(result.crateInfo?.rootModule.items.length).toBeGreaterThan(50)
     })
 
     it('should report accurate parsing time', async () => {
@@ -304,7 +304,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(macroCode)
       expect(result.success).toBe(true)
 
-      const items = result.crate!.rootModule.items
+      const items = result.crateInfo!.rootModule.items
       expect(items.length).toBe(2)
 
       const struct = items.find((item) => item.type === 'struct')
@@ -334,7 +334,7 @@ describe('Parser Integration Tests', () => {
       const result = await parseRustCode(asyncCode)
       expect(result.success).toBe(true)
 
-      const items = result.crate!.rootModule.items
+      const items = result.crateInfo!.rootModule.items
       expect(items.length).toBeGreaterThan(3)
 
       const asyncFn = items.find((item) => item.name === 'fetch_and_process')

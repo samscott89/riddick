@@ -1,4 +1,4 @@
-import type { ParseResult, ParseResponse, ParserOptions } from './types'
+import type { ParseResponse, ParserOptions } from './types'
 // Import WASM directly using Workers' native support
 import init, { parse_rust_code } from './wasm/rust_parser.js'
 import wasmModule from './wasm/rust_parser_bg.wasm'
@@ -11,7 +11,7 @@ async function ensureWasmInitialized(): Promise<void> {
       await init({ module_or_path: wasmModule })
       wasmInitialized = true
     } catch (error) {
-      throw new Error(`Failed to initialize WASM parser: ${error}`)
+      throw new Error(`Failed to initialize WASM parser: ${error as string}`)
     }
   }
 }
@@ -19,15 +19,16 @@ async function ensureWasmInitialized(): Promise<void> {
 export async function parseRustCode(
   code: string,
   _options: ParserOptions = {},
-): Promise<ParseResult> {
+): Promise<ParseResponse> {
   await ensureWasmInitialized()
   try {
     const result = parse_rust_code(code) as ParseResponse
+    // console.log('WASM parse result:', result.parseTime)
 
     // The result should match our ParseResponse type from the Rust code
     return {
       success: result.success,
-      parseTime: Number(result.parseTime), // Convert bigint to number
+      parseTime: result.parseTime,
       crateInfo: result.crateInfo,
       errors: result.errors.map((error) => ({
         message: error.message,
@@ -38,11 +39,11 @@ export async function parseRustCode(
   } catch (error) {
     return {
       success: false,
-      parseTime: 0,
+      parseTime: BigInt(0),
       crateInfo: null,
       errors: [
         {
-          message: `WASM parser error: ${error}`,
+          message: `WASM parser error: ${error as string}`,
           severity: 'error' as const,
           location: null,
         },

@@ -8,7 +8,8 @@ module.exports = tseslint.config(
   ...tseslint.configs.recommended,
   prettierConfig,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    extends: [...tseslint.configs.recommendedTypeChecked],
     plugins: {
       import: importPlugin,
     },

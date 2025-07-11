@@ -24,7 +24,7 @@ app.use('/parse/*', prettyJSON(), logger(), async (c, next) => {
 
 // Paste this code at the end of the src/index.ts file
 
-app.get('/health', async (c) => {
+app.get('/health', (c) => {
   return c.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -33,18 +33,24 @@ app.get('/health', async (c) => {
 
 app.post('/parse', async (c) => {
   try {
-    const parseRequest = (await c.req.json()) as { code: string }
+    const parseRequest: { code: string } = await c.req.json()
     const result = await handleParseRequest(parseRequest)
-
+    // Convert bigint to number for JSON serialization
     return c.json({
-      success: true,
-      result,
+      ...result,
+      parseTime: Number(result.parseTime),
     })
   } catch (error) {
     return c.json(
       {
         success: false,
-        error: String(error),
+        parseTime: 0,
+        crateInfo: null,
+        errors: [{
+          message: String(error),
+          severity: 'error',
+          location: null,
+        }],
       },
       {
         status: 400,
@@ -53,7 +59,7 @@ app.post('/parse', async (c) => {
   }
 })
 
-app.get('/parse/examples', async (c) => {
+app.get('/parse/examples', (c) => {
   return c.json({
     success: true,
     examples: EXAMPLE_REQUESTS,
@@ -88,13 +94,25 @@ app.get(
 
       return c.json({
         request: example,
-        result,
+        result: {
+          ...result,
+          parseTime: Number(result.parseTime),
+        },
       })
     } catch (error) {
       return c.json(
         {
-          success: false,
-          error: String(error),
+          request: example,
+          result: {
+            success: false,
+            parseTime: 0,
+            crateInfo: null,
+            errors: [{
+              message: String(error),
+              severity: 'error',
+              location: null,
+            }],
+          },
         },
         {
           status: 500,

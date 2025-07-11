@@ -105,6 +105,7 @@ export function validateRustCode(sourceCode: string): ParseError[] {
     errors.push({
       message: 'Rust uses "fn" for function declarations, not "function"',
       severity: 'warning',
+      location: null,
     })
   }
 
@@ -112,6 +113,7 @@ export function validateRustCode(sourceCode: string): ParseError[] {
     errors.push({
       message: 'Rust uses "let" for variable declarations, not "var"',
       severity: 'warning',
+      location: null,
     })
   }
 
@@ -245,20 +247,23 @@ export function createTimeoutError(timeout: number): ParseError {
   return {
     message: `Parser timed out after ${timeout}ms`,
     severity: 'error',
+    location: null,
   }
 }
 
 export function createInitializationError(error: unknown): ParseError {
   return {
-    message: `Failed to initialize parser: ${error}`,
+    message: `Failed to initialize parser: ${String(error)}`,
     severity: 'error',
+    location: null,
   }
 }
 
 export function createParsingError(error: unknown): ParseError {
   return {
-    message: `Parsing failed: ${error}`,
+    message: `Parsing failed: ${String(error)}`,
     severity: 'error',
+    location: null,
   }
 }
 
@@ -266,6 +271,7 @@ export function createMemoryError(): ParseError {
   return {
     message: 'Insufficient memory to parse the code',
     severity: 'error',
+    location: null,
   }
 }
 
@@ -273,5 +279,6 @@ export function createFileSizeError(maxSize: number): ParseError {
   return {
     message: `File size exceeds maximum allowed size of ${maxSize} bytes`,
     severity: 'error',
+    location: null,
   }
 }

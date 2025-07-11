@@ -21,6 +21,7 @@ export default defineWorkersProject(async () => {
       setupFiles: ["./test/apply-migrations.ts"],
       poolOptions: {
         workers: {
+          singleWorker: true,
           wrangler: {
             configPath: "./wrangler.toml",
           },

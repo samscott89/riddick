@@ -1,98 +1,23 @@
 // Parser endpoint for testing Rust code parsing in Cloudflare Workers
 import { parseRustCode } from './parser'
+import type { ParseRequest, ParseResponse } from './parser/types'
 
-export interface ParserRequest {
-  code: string
-  options?: {
-    includeComments?: boolean
-    includeDocComments?: boolean
-    includePrivateItems?: boolean
-    timeout?: number
-  }
-}
-
-export interface ParserResponse {
-  success: boolean
-  parseTime: number
-  itemCount: number
-  errors: Array<{
-    message: string
-    severity: string
-    location?: {
-      startLine: number
-      startColumn: number
-      endLine: number
-      endColumn: number
-    }
-  }>
-  items?: Array<{
-    type: string
-    name: string
-    visibility?: string
-    location: {
-      startLine: number
-      endLine: number
-    }
-  }>
-}
 
 export async function handleParseRequest(
-  request: ParserRequest,
-): Promise<ParserResponse> {
-  const startTime = Date.now()
-
-  try {
-    const result = await parseRustCode(request.code, request.options || {})
-
-    const response: ParserResponse = {
-      success: result.success,
-      parseTime: result.parseTime,
-      itemCount: result.crateInfo?.rootModule.items.length || 0,
-      errors: result.errors.map((error) => ({
-        message: error.message,
-        severity: error.severity,
-        location: error.location || undefined,
-      })),
-    }
-
-    // Include parsed items if successful
-    if (result.success && result.crateInfo) {
-      response.items = result.crateInfo.rootModule.items.map((item) => ({
-        type: item.type,
-        name: item.name,
-        visibility: item.visibility,
-        location: {
-          startLine: item.location.startLine,
-          endLine: item.location.endLine,
-        },
-      }))
-    }
-
-    return response
-  } catch (error) {
-    return {
-      success: false,
-      parseTime: Date.now() - startTime,
-      itemCount: 0,
-      errors: [
-        {
-          message: `Parser error: ${error}`,
-          severity: 'error',
-        },
-      ],
-    }
-  }
+  request: ParseRequest,
+): Promise<ParseResponse> {
+  return  await parseRustCode(request.code)
 }
 
 // Example usage for testing
-export const EXAMPLE_REQUESTS: ParserRequest[] = [
+export const EXAMPLE_REQUESTS: ParseRequest[] = [
   {
     code: `
 fn greet(name: &str) -> String {
     format!("Hello, {}!", name)
 }
     `,
-    options: { includeComments: false },
+    // options: { includeComments: false },
   },
   {
     code: `
@@ -107,7 +32,7 @@ impl Point {
     }
 }
     `,
-    options: { includePrivateItems: false },
+    // options: { includePrivateItems: false },
   },
   {
     code: `

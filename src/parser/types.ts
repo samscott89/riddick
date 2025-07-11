@@ -4,7 +4,6 @@ import type { FieldInfo } from './generated/FieldInfo'
 import type { ItemInfo } from './generated/ItemInfo'
 import type { ModuleInfo } from './generated/ModuleInfo'
 import type { ParameterInfo } from './generated/ParameterInfo'
-import type { ParseResponse as GeneratedParseResponse } from './generated/ParseResponse'
 import type { VariantInfo } from './generated/VariantInfo'
 
 // Direct re-exports of generated types - no more manual types!
@@ -18,11 +17,6 @@ export type { ParseRequest } from './generated/ParseRequest'
 export type { ParseResponse } from './generated/ParseResponse'
 export type { SourceLocation } from './generated/SourceLocation'
 export type { VariantInfo } from './generated/VariantInfo'
-
-// Create a simple wrapper for ParseResponse with number instead of bigint
-export type ParseResult = Omit<GeneratedParseResponse, 'parseTime'> & {
-  parseTime: number
-}
 
 // Simple type aliases that make more sense
 export type ParsedItem = ItemInfo

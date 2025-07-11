@@ -1,8 +1,14 @@
 import { SELF, env } from 'cloudflare:test'
 import { describe, it, expect } from 'vitest'
-import type { ParseResponse } from '../src/parser/generated/ParseResponse'
+
+import type { ParseResponse, ParseRequest } from '../src/parser/types'
 
 const API_KEY = env.API_KEY
+
+interface ExamplesResponse {
+  success: boolean
+  examples: Array<ParseRequest>
+}
 
 interface ParseEndpointResponse {
   success: boolean
@@ -10,28 +16,9 @@ interface ParseEndpointResponse {
   error?: string
 }
 
-interface ExamplesResponse {
-  success: boolean
-  examples: Array<{
-    code: string
-    options?: Record<string, unknown>
-  }>
-}
-
 interface ExampleExecutionResponse {
-  request: {
-    code: string
-    options?: Record<string, unknown>
-  }
-  result: {
-    success: boolean
-    itemCount: number
-    items: Array<{
-      type: string
-      name: string
-    }>
-    parseTime: number
-  }
+  request: ParseRequest
+  result: ParseResponse
 }
 
 describe('Parse Endpoint Integration Tests', () => {
@@ -84,13 +71,12 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
 
       expect(data.success).toBe(true)
-      expect(data.result.success).toBe(true)
-      expect(data.result.itemCount).toBe(1)
-      expect(data.result.items[0].type).toBe('function')
-      expect(data.result.items[0].name).toBe('hello')
+      expect(data.crateInfo?.rootModule.items.length).toBe(1)
+      expect(data.crateInfo?.rootModule.items[0].type).toBe('function')
+      expect(data.crateInfo?.rootModule.items[0].name).toBe('hello')
     })
 
     it('should parse struct with fields', async () => {
@@ -108,11 +94,11 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
 
       expect(data.success).toBe(true)
-      expect(data.result.items[0].type).toBe('struct')
-      expect(data.result.items[0].name).toBe('User')
+      expect(data.crateInfo?.rootModule.items[0].type).toBe('struct')
+      expect(data.crateInfo?.rootModule.items[0].name).toBe('User')
       // Note: fields are not exposed in the simplified response
     })
 
@@ -130,11 +116,11 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
 
       expect(data.success).toBe(true)
-      expect(data.result.items[0].type).toBe('trait')
-      expect(data.result.items[0].name).toBe('Display')
+      expect(data.crateInfo?.rootModule.items[0].type).toBe('trait')
+      expect(data.crateInfo?.rootModule.items[0].name).toBe('Display')
     })
 
     it('should handle self parameters correctly', async () => {
@@ -152,19 +138,19 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
 
       expect(data.success).toBe(true)
-      expect(data.result.itemCount).toBeGreaterThan(0)
+      expect(data.crateInfo?.rootModule.items.length).toBeGreaterThan(0)
 
       // The parser correctly handles impl blocks with methods
       // Note: The simplified response doesn't expose parameter details like self
-      const items = data.result.items
+      const items = data.crateInfo?.rootModule.items
       expect(items).toBeDefined()
-      expect(items.length).toBeGreaterThan(0)
+      expect(items!.length).toBeGreaterThan(0)
 
       // Check that we have an impl type item
-      const hasImpl = items.some((item) => item.type === 'impl')
+      const hasImpl = items!.some((item) => item.type === 'impl')
       expect(hasImpl).toBe(true)
     })
   })
@@ -178,9 +164,9 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
       expect(data.success).toBe(true)
-      expect(data.result.itemCount).toBe(0)
+      expect(data.crateInfo?.rootModule.items.length).toBe(0)
     })
 
     it('should handle invalid JSON', async () => {
@@ -202,15 +188,15 @@ describe('Parse Endpoint Integration Tests', () => {
 
       // The endpoint treats missing code as undefined and may parse it as empty
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
 
       // Either an error or successful parse of empty code
       if (data.success) {
         // Treated as empty code
-        expect(data.result.itemCount).toBe(0)
+        expect(data.crateInfo?.rootModule.items.length).toBe(0)
       } else {
         // Treated as error
-        expect(data.error).toBeDefined()
+        expect(data.errors).toBeDefined()
       }
     })
 
@@ -222,10 +208,9 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
-      expect(data.success).toBe(true)
-      expect(data.result.success).toBe(false)
-      expect(data.result.errors.length).toBeGreaterThan(0)
+      const data: ParseResponse = await res.json()
+      expect(data.success).toBe(false)
+      expect(data.errors.length).toBeGreaterThan(0)
     })
   })
 
@@ -237,7 +222,7 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ExamplesResponse
+      const data: ExamplesResponse = await res.json()
       expect(data.success).toBe(true)
       expect(Array.isArray(data.examples)).toBe(true)
       expect(data.examples.length).toBeGreaterThan(0)
@@ -250,9 +235,9 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ExampleExecutionResponse
+      const data: ExampleExecutionResponse = await res.json()
       expect(data.request).toBeDefined()
-      expect(data.result).toBeDefined()
+      expect(data.result.crateInfo?.rootModule).toBeDefined()
     })
 
     it('should return 404 for invalid example ID', async () => {
@@ -275,9 +260,9 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
       expect(data.success).toBe(true)
-      expect(data.result.parseTime).toBeGreaterThan(0)
+      expect(data.parseTime).toBeGreaterThan(0)
     })
 
     it('should reuse WASM instance on subsequent requests', async () => {
@@ -287,7 +272,7 @@ describe('Parse Endpoint Integration Tests', () => {
         headers: baseHeaders,
         body: JSON.stringify({ code: 'fn first() {}' }),
       })
-      ;(await res1.json()) as ParseEndpointResponse
+      ;(await res1.json())
 
       // Second request - should reuse WASM
       const res2 = await SELF.fetch('http://localhost/parse', {
@@ -295,7 +280,7 @@ describe('Parse Endpoint Integration Tests', () => {
         headers: baseHeaders,
         body: JSON.stringify({ code: 'fn second() {}' }),
       })
-      const data2 = (await res2.json()) as ParseEndpointResponse
+      const data2: ParseResponse = (await res2.json())
 
       // Both should succeed
       expect(res1.status).toBe(200)
@@ -369,10 +354,9 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
       expect(data.success).toBe(true)
-      expect(data.result.success).toBe(true)
-      expect(data.result.itemCount).toBeGreaterThan(5)
+      expect(data.crateInfo?.rootModule.items.length).toBeGreaterThan(5)
     })
   })
 
@@ -392,21 +376,19 @@ describe('Parse Endpoint Integration Tests', () => {
       )
 
       const responses = await Promise.all(promises)
-      const results = await Promise.all(
-        responses.map((r) => r.json() as Promise<ParseEndpointResponse>),
-      )
-
       // All requests should succeed
       responses.forEach((res) => {
         expect(res.status).toBe(200)
       })
+      const results = await Promise.all(
+        responses.map((r) => r.json()),
+      ) as ParseResponse[]
 
       // Verify each result
       results.forEach((data, index) => {
         expect(data.success).toBe(true)
-        expect(data.result.success).toBe(true)
-        expect(data.result.itemCount).toBe(1)
-        expect(data.result.items[0].name).toBe(`concurrent_test_${index}`)
+        expect(data.crateInfo?.rootModule.items.length).toBe(1)
+        expect(data.crateInfo?.rootModule.items[0].name).toBe(`concurrent_test_${index}`)
       })
     })
 
@@ -429,8 +411,8 @@ describe('Parse Endpoint Integration Tests', () => {
 
       const responses = await Promise.all(promises)
       const results = await Promise.all(
-        responses.map((r) => r.json() as Promise<ParseEndpointResponse>),
-      )
+        responses.map((r) => r.json()),
+      ) as ParseResponse[]
 
       // All HTTP requests should return 200 (errors are in the parse result)
       responses.forEach((res) => {
@@ -438,11 +420,11 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       // Check specific results
-      expect(results[0].result.success).toBe(true) // valid1
-      expect(results[1].result.success).toBe(false) // invalid syntax
-      expect(results[2].result.success).toBe(true) // Valid2
-      expect(results[3].result.success).toBe(true) // valid3
-      expect(results[4].result.success).toBe(false) // incomplete trait
+      expect(results[0].success).toBe(true) // valid1
+      expect(results[1].success).toBe(false) // invalid syntax
+      expect(results[2].success).toBe(true) // Valid2
+      expect(results[3].success).toBe(true) // valid3
+      expect(results[4].success).toBe(false) // incomplete trait
     })
 
     it('should handle rapid sequential requests', async () => {
@@ -456,7 +438,7 @@ describe('Parse Endpoint Integration Tests', () => {
         })
 
         expect(res.status).toBe(200)
-        const data = (await res.json()) as ParseEndpointResponse
+        const data: ParseResponse = await res.json()
         expect(data.success).toBe(true)
       }
     })
@@ -476,13 +458,13 @@ describe('Parse Endpoint Integration Tests', () => {
       const totalTime = endTime - startTime
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
 
       // Total request should complete within reasonable time
       expect(totalTime).toBeLessThan(100) // 100ms for small snippet
 
       // Parse time should be very fast for small code
-      expect(data.result.parseTime).toBeLessThan(10) // 10ms parse time
+      expect(data.parseTime).toBeLessThan(10) // 10ms parse time
     })
 
     it('should handle medium-sized files efficiently', async () => {
@@ -533,10 +515,10 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       expect(res.status).toBe(200)
-      const data = (await res.json()) as ParseEndpointResponse
+      const data: ParseResponse = await res.json()
 
       // Parse time should still be reasonable for medium files
-      expect(data.result.parseTime).toBeLessThan(50) // 50ms for medium file
+      expect(data.parseTime).toBeLessThan(50) // 50ms for medium file
     })
 
     it('should measure parsing performance across different code types', async () => {
@@ -574,19 +556,21 @@ describe('Parse Endpoint Integration Tests', () => {
           body: JSON.stringify({ code: testCase.code }),
         })
 
-        const data = (await res.json()) as ParseEndpointResponse
+        const data: ParseResponse = await res.json()
         results.push({
           name: testCase.name,
-          parseTime: data.result.parseTime,
+          parseTime: data.parseTime,
         })
       }
 
       // All parse times should be reasonable
       results.forEach((result) => {
+        console.log(result)
         expect(result.parseTime).toBeLessThan(20) // 20ms max for these examples
       })
 
       // Log results for performance tracking (optional)
+      // eslint-disable-next-line no-console
       console.log('Parse performance results:', results)
     })
 
@@ -602,8 +586,8 @@ describe('Parse Endpoint Integration Tests', () => {
           body: JSON.stringify({ code }),
         })
 
-        const data = (await res.json()) as ParseEndpointResponse
-        parseTimes.push(data.result.parseTime)
+        const data: ParseResponse = await res.json()
+        parseTimes.push(Number(data.parseTime))
       }
 
       // Calculate statistics
