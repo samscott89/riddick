@@ -1,29 +1,14 @@
-use axum::{
-    routing::post,
-    Router, Json,
-};
-use tower_service::Service;
-use worker::*;
+use wasm_bindgen::prelude::*;
 use ra_ap_syntax::{
     ast::{self, HasModuleItem, HasName, HasVisibility, HasGenericParams},
     AstNode, SourceFile, TextRange,
 };
 use serde::{Serialize, Deserialize};
 
-fn router() -> Router {
-    Router::new()
-        .route("/", post(root))
-        .route("/parse", post(parse_rust_code))
-}
-
-#[event(fetch)]
-async fn fetch(
-    req: HttpRequest,
-    _env: Env,
-    _ctx: Context,
-) -> Result<axum::http::Response<axum::body::Body>> {
+// Initialize panic hook for better error messages in WASM
+#[wasm_bindgen(start)]
+pub fn init() {
     console_error_panic_hook::set_once();
-    Ok(router().call(req).await?)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,27 +113,10 @@ pub struct ParseError {
     pub location: Option<SourceLocation>,
 }
 
-pub async fn root(query: String) -> String {
-    let parsed = ra_ap_syntax::SourceFile::parse(&query, ra_ap_syntax::Edition::Edition2024);
-
-    format!(
-        "PARSED:\n{:#?}\nErrors: {}\n\n",
-        parsed.syntax_node().clone(),
-        parsed
-            .errors()
-            .iter()
-            .map(|e| e.to_string())
-            .collect::<Vec<_>>()
-            .join("\n\n")
-    )
-}
-
-pub async fn parse_rust_code(Json(request): Json<ParseRequest>) -> Json<ParseResponse> {
-    // Use a simple counter instead of Instant for WASM compatibility
-    let start_time = 0;
-    
-    let parsed = SourceFile::parse(&request.code, ra_ap_syntax::Edition::Edition2024);
-    let syntax_node = parsed.syntax_node();
+#[wasm_bindgen]
+pub fn parse_rust_code(code: &str) -> Result<JsValue, JsValue> {
+    let parsed = SourceFile::parse(code, ra_ap_syntax::Edition::Edition2024);
+    let _syntax_node = parsed.syntax_node();
     
     // Extract errors
     let errors: Vec<ParseError> = parsed
@@ -171,14 +139,16 @@ pub async fn parse_rust_code(Json(request): Json<ParseRequest>) -> Json<ParseRes
         root_module,
     };
     
-    let parse_time = 1; // Fixed parse time for WASM compatibility
-    
-    Json(ParseResponse {
+    let response = ParseResponse {
         success: errors.is_empty(),
-        parse_time,
+        parse_time: 1, // Fixed for WASM compatibility
         crate_info: Some(crate_info),
         errors,
-    })
+    };
+    
+    // Convert to JsValue using serde-wasm-bindgen
+    serde_wasm_bindgen::to_value(&response)
+        .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
 }
 
 fn extract_module_info(source_file: &SourceFile, name: &str, path: &str) -> ModuleInfo {
