@@ -1,10 +1,41 @@
-import { defineConfig } from 'vitest/config';
-import wasm from 'vite-plugin-wasm';
+import path from "node:path";
+import {
+  defineWorkersProject,
+  readD1Migrations,
+  WorkersProjectConfigExport,
+} from "@cloudflare/vitest-pool-workers/config";
+import wasm from "vite-plugin-wasm"
 
-export default defineConfig({
-  plugins: [wasm()],
-  test: {
-    globals: true,
-    environment: 'node'
-  }
+
+
+export default defineWorkersProject(async () => {
+  // Read all migrations in the `migrations` directory
+  const migrationsPath = path.join(__dirname, "migrations");
+  const migrations = await readD1Migrations(migrationsPath);
+
+
+
+
+  const options: WorkersProjectConfigExport = {
+    plugins: [
+      wasm()
+    ],
+    test: {
+      setupFiles: ["./test/apply-migrations.ts"],
+      poolOptions: {
+        workers: {
+          wrangler: {
+            configPath: "./wrangler.toml",
+          },
+          miniflare: {
+            // Add a test-only binding for migrations, so we can apply them in a setup file
+            bindings: { TEST_MIGRATIONS: migrations },
+            // kvNamespaces: ["TEST_NAMESPACE"],
+          }
+        },
+      },
+    },
+  };
+
+  return options;
 });

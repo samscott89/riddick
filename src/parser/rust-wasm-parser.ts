@@ -5,36 +5,31 @@ import {
   ParsedCrate,
   ParserOptions,
 } from './types'
-import { readFileSync } from 'fs'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
 
-// Different approaches for browser vs Node.js
-let wasmModule: any = null
+// Import WASM directly using Workers' native support
+import init, { parse_rust_code } from './wasm/rust_parser.js'
+import wasmModule from './wasm/rust_parser_bg.wasm'
+
 let wasmInitialized = false
 
 async function ensureWasmInitialized() {
   if (!wasmInitialized) {
-    const wasmInit = await import('./wasm/rust_parser.js')
+    try {
 
-    let wasmBytes: ArrayBuffer
-    if (typeof window === 'undefined') {
-      // Node.js environment (tests)
-      const __filename = fileURLToPath(import.meta.url)
-      const __dirname = dirname(__filename)
-      const wasmPath = join(__dirname, 'wasm', 'rust_parser_bg.wasm')
-      wasmBytes = readFileSync(wasmPath).buffer
-    } else {
-      // Browser environment
-      const wasmUrl = new URL('./wasm/rust_parser_bg.wasm', import.meta.url)
-      const response = await fetch(wasmUrl)
-      wasmBytes = await response.arrayBuffer()
+
+      // if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      //   console.log(process.versions.node);
+      //   throw new Error('WASM parser cannot be used in Node.js environment. Please use it in a browser or Cloudflare Workers.')
+      // } else {
+      //   throw new Error('WASM parser not initialized. Ensure you are using the correct environment.')
+      // }
+
+      // const module = await import('./wasm/rust_parser_bg.wasm')
+      await init({ module_or_path: wasmModule })
+      wasmInitialized = true
+    } catch (error) {
+      throw new Error(`Failed to initialize WASM parser: ${error}`)
     }
-
-    await wasmInit.default(wasmBytes)
-    wasmInit.init() // Initialize panic hook
-    wasmModule = wasmInit
-    wasmInitialized = true
   }
 }
 
@@ -42,10 +37,10 @@ export async function parseRustCode(
   code: string,
   _options: ParserOptions = {},
 ): Promise<ParseResult> {
+  await ensureWasmInitialized()
   try {
-    await ensureWasmInitialized()
 
-    const result = wasmModule.parse_rust_code(code)
+    const result = parse_rust_code(code)
 
     // The result should match our ParseResponse type from the Rust code
     return {

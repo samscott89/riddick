@@ -148,7 +148,7 @@ pub fn parse_rust_code(code: &str) -> Result<JsValue, JsValue> {
 
     // Convert to JsValue using serde-wasm-bindgen
     serde_wasm_bindgen::to_value(&response)
-        .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
+        .map_err(|e| JsValue::from_str(&format!("Serialization error: {e}")))
 }
 
 fn extract_module_info(source_file: &SourceFile, name: &str, path: &str) -> ModuleInfo {
@@ -304,7 +304,7 @@ fn extract_impl_info(i: ast::Impl) -> Option<ItemInfo> {
     let trait_name = i.trait_().map(|t| t.syntax().text().to_string());
     let name = trait_name
         .as_ref()
-        .map(|t| format!("{} for {}", t, impl_type))
+        .map(|t| format!("{t} for {impl_type}"))
         .unwrap_or(impl_type.clone());
 
     let syntax = i.syntax();
@@ -496,17 +496,11 @@ fn extract_parameters(func: &ast::Fn) -> Vec<ParameterInfo> {
 
         // Handle regular parameters
         for param in param_list.params() {
-            let param_text = param.syntax().text().to_string();
-
-            // Skip if this looks like a self parameter (shouldn't happen with proper self_param() handling)
-            if param_text.trim() == "self" || param_text.trim() == "mut self" {
-                continue;
-            }
-
-            // Extract name and type
-            let parts: Vec<&str> = param_text.split(':').collect();
-            let param_name = parts.get(0).unwrap_or(&"").trim().to_string();
-            let param_type = parts.get(1).unwrap_or(&"").trim().to_string();
+            let param_name = param.pat().map(|p| p.to_string()).unwrap_or_default();
+            let param_type = param
+                .ty()
+                .map(|t| t.syntax().text().to_string())
+                .unwrap_or_default();
 
             params.push(ParameterInfo {
                 name: param_name.clone(),

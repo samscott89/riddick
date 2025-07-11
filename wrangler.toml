@@ -1,7 +1,6 @@
 name = "riddick"
 main = "src/index.ts"
-compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2025-07-05"
 
 
 [[d1_databases]]
