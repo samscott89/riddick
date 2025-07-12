@@ -148,9 +148,15 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
             content: file.content,
             parsed: response.crateInfo,
           })
+        } else {
+          throw new NonRetryableError(
+            `Failed to parse file ${file.path}:\n\t${response.errors.join('\n\t')}`,
+          )
         }
       } catch (error) {
-        console.warn(`Failed to parse file ${file.path}:`, error)
+        throw new NonRetryableError(
+          `Failed to parse file ${file.path}: ${error instanceof Error ? error.message : String(error)}`,
+        )
       }
     }
 

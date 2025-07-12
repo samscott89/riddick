@@ -9,8 +9,4 @@
     "cwd": "apps/rust-parser",
     "command": "cargo install -q worker-build && worker-build --release"
   },
-  
-  // Service will be available for RPC calls from other workers
-  
-  // Parser doesn't need database or storage access
 }
