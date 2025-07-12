@@ -58,7 +58,7 @@ export class MigrationRunner {
 
     for (const migration of allMigrations) {
       if (!appliedMigrations.includes(migration.id)) {
-        // eslint-disable-next-line no-console
+         
         console.log(`Running migration: ${migration.filename}`)
 
         try {
@@ -78,15 +78,15 @@ export class MigrationRunner {
             .bind(migration.id, migration.filename)
             .run()
 
-          // eslint-disable-next-line no-console
+           
           console.log(`✓ Migration ${migration.filename} completed`)
         } catch (error) {
-          // eslint-disable-next-line no-console
+           
           console.error(`✗ Migration ${migration.filename} failed:`, error)
           throw error
         }
       } else {
-        // eslint-disable-next-line no-console
+         
         console.log(`⏭ Migration ${migration.filename} already applied`)
       }
     }

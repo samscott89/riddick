@@ -1,10 +1,8 @@
-import 
-    defineConfig from "eslint/config";
+const config = require('@riddick/eslint-config')
 
-import config  from "@riddick/eslint-config";
-
-export default defineConfig([{
-    extends: [config],
-    ignores: [
-        "src/rust_parser_generated/**",]
-}]);
+module.exports = [
+  ...config,
+  {
+    ignores: ['src/rust_parser_generated/**'],
+  },
+]

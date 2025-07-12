@@ -39,8 +39,8 @@ export class DatabaseService {
 
   async createCrateWithModulesAndItems(
     crateRequest: CreateCrateRequest,
-    moduleRequests: Omit<CreateModuleRequest, 'crate_id'>[],
-    itemRequests: Omit<CreateItemRequest, 'module_id'>[],
+    moduleRequests: Array<Omit<CreateModuleRequest, 'crate_id'>>,
+    itemRequests: Array<Omit<CreateItemRequest, 'module_id'>>,
   ): Promise<{
     crate: Crate
     modules: Module[]

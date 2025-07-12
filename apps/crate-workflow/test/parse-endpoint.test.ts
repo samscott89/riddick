@@ -7,7 +7,7 @@ const API_KEY = env.API_KEY
 
 interface ExamplesResponse {
   success: boolean
-  examples: Array<ParseRequest>
+  examples: ParseRequest[]
 }
 
 interface ExampleExecutionResponse {
@@ -565,7 +565,7 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       // Log results for performance tracking (optional)
-      // eslint-disable-next-line no-console
+       
       console.log('Parse performance results:', results)
     })
 
