@@ -10,11 +10,6 @@ interface ExamplesResponse {
   examples: Array<ParseRequest>
 }
 
-interface ParseEndpointResponse {
-  success: boolean
-  result?: ParseResponse
-  error?: string
-}
 
 interface ExampleExecutionResponse {
   request: ParseRequest
@@ -565,7 +560,6 @@ describe('Parse Endpoint Integration Tests', () => {
 
       // All parse times should be reasonable
       results.forEach((result) => {
-        console.log(result)
         expect(result.parseTime).toBeLessThan(20) // 20ms max for these examples
       })
 

@@ -1,8 +1,14 @@
 export enum CrateStatus {
   PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
+  QUEUED = 'queued',
+  FETCHING = 'fetching',
+  FETCHED = 'fetched',
+  PARSING = 'parsing',
+  PARSED = 'parsed',
+  SUMMARIZING = 'summarizing',
+  COMPLETE = 'complete',
   FAILED = 'failed',
+  NOT_FOUND = 'not_found',
 }
 
 export enum ItemType {

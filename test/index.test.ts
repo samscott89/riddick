@@ -16,7 +16,7 @@ describe('Worker', () => {
         method: 'GET',
       })
 
-      const json = (await res.json()) as { status: string; timestamp: string }
+      const json: { status: string; timestamp: string } = await res.json()
 
       expect(json).toHaveProperty('status', 'ok')
       expect(json).toHaveProperty('timestamp')
