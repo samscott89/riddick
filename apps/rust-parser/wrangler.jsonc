@@ -5,6 +5,8 @@
   "compatibility_date": "2025-07-12",
   
   "build": {
+    // NOTE: This build only works from the root directory of the project
+    "cwd": "apps/rust-parser",
     "command": "cargo install -q worker-build && worker-build --release"
   },
   

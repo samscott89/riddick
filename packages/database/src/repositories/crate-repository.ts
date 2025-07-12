@@ -83,6 +83,21 @@ export class CrateRepository {
     }
   }
 
+  async updateCrateWorkflowId(id: number, workflowId: string): Promise<void> {
+    const result = await this.db
+      .prepare('UPDATE crates SET workflow_id = ? WHERE id = ?')
+      .bind(workflowId, id)
+      .run()
+
+    if (!result.success) {
+      throw new Error(`Failed to update crate workflow ID: ${result.error}`)
+    }
+
+    if (!result.meta.changes || result.meta.changes === 0) {
+      throw new Error(`Crate with id ${id} not found`)
+    }
+  }
+
   async deleteCrate(id: number): Promise<void> {
     const result = await this.db
       .prepare('DELETE FROM crates WHERE id = ?')

@@ -103,11 +103,17 @@ export interface BatchCreateItemsRequest {
 // Shared types between api-worker and crate-processor
 
 export interface QueueMessage {
-  crate_id: number
-  crate_name: string
+  crateId: number
+  crateName: string
   version: string
-  stage: 'fetch' | 'parse' | 'summarize'
-  created_at: string
+  stage?: 'fetch' | 'parse' | 'summarize'
+  created_at?: string
+}
+
+export interface CrateWithData {
+  name: string
+  version: string
+  files: Array<{ path: string; content: string }>
 }
 
 export interface ProcessingStage {

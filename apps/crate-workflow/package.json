@@ -15,10 +15,12 @@
   },
   "dependencies": {
     "@riddick/database": "workspace:*",
-    "@riddick/types": "workspace:*"
+    "@riddick/types": "workspace:*",
+    "pako": "^2.1.0"
   },
   "devDependencies": {
     "@riddick/eslint-config": "workspace:*",
-    "@riddick/config": "workspace:*"
+    "@riddick/config": "workspace:*",
+    "@types/pako": "^2.0.3"
   }
 }

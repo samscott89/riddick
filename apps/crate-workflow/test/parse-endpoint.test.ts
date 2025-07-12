@@ -565,7 +565,7 @@ describe('Parse Endpoint Integration Tests', () => {
       })
 
       // Log results for performance tracking (optional)
-       
+
       console.log('Parse performance results:', results)
     })
 

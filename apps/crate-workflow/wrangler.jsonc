@@ -13,9 +13,9 @@
 	},
 	"workflows": [
 		{
-			"name": "workflows-starter",
-			"binding": "MY_WORKFLOW",
-			"class_name": "MyWorkflow"
+			"name": "crate-processing-workflow",
+			"binding": "CRATE_WORKFLOW",
+			"class_name": "CrateProcessingWorkflow"
 		}
 	],
 
@@ -28,7 +28,7 @@
 	],
 	"d1_databases": [
 		{
-			"binding": "db",
+			"binding": "DB",
 			"database_name": "riddick-db",
 			"migrations_dir": "../../packages/database/migrations",
 			"database_id": "local"
@@ -36,10 +36,28 @@
 	],
 	"r2_buckets": [
 		{
-			"binding": "CRATES_STORAGE",
+			"binding": "CRATE_BUCKET",
 			"bucket_name": "riddick-crates"
 		}
 	],
+	"ai": {
+		"binding": "AI"
+	},
+	"queues": {
+		"consumers": [
+			{
+				"queue": "crate-processing",
+				"max_batch_size": 1,
+				"max_batch_timeout": 30
+			}
+		],
+		"producers": [
+			{
+				"queue": "crate-processing",
+				"binding": "CRATE_QUEUE"
+			}
+		]
+	},
 
 	/**
 	 * Smart Placement

@@ -108,6 +108,10 @@ export class DatabaseService {
     })
   }
 
+  async updateCrateWorkflowId(id: number, workflowId: string): Promise<void> {
+    await this.crateRepository.updateCrateWorkflowId(id, workflowId)
+  }
+
   async getDatabaseStatistics(): Promise<{
     totalCrates: number
     totalModules: number

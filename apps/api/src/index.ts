@@ -35,29 +35,30 @@ app.get('/health', (c) => {
   })
 })
 
+const indexSchema = z.object({
+  crate_name: z.string(),
+  version: z.string(),
+})
+
 // Index endpoint - queue crate processing
-app.post(
-  '/index',
-  zValidator(
-    'json',
-    z.object({
-      crate_name: z.string(),
-      version: z.string(),
-    }),
-  ),
-  async (c) => {
-    const { crate_name, version } = c.req.valid('json')
+app.post('/index', zValidator('json', indexSchema), async (c) => {
+  const { crate_name, version } = c.req.valid('json')
 
-    try {
-      const crateRepo = new CrateRepository(c.env.DB)
+  try {
+    const crateRepo = new CrateRepository(c.env.DB)
 
-      // Check if crate already exists
-      const existingCrate = await crateRepo.getCrateByNameVersion(
-        crate_name,
-        version,
-      )
+    // Check if crate already exists
+    const existingCrate = await crateRepo.getCrateByNameVersion(
+      crate_name,
+      version,
+    )
 
-      if (existingCrate) {
+    if (existingCrate) {
+      if (existingCrate.status === CrateStatus.FAILED) {
+        // delete the failed crate and try again
+        await crateRepo.deleteCrate(existingCrate.id)
+      } else {
+        // If crate already exists and is not failed, return existing crate info
         return c.json({
           success: true,
           message: 'Crate already exists',
@@ -65,44 +66,44 @@ app.post(
           status: existingCrate.status,
         })
       }
-
-      // Create new crate record
-      const newCrate = await crateRepo.createCrate({
-        name: crate_name,
-        version,
-        status: CrateStatus.QUEUED,
-      })
-
-      // Queue the processing task
-      const queueMessage: QueueMessage = {
-        crate_id: newCrate.id,
-        crate_name,
-        version,
-        stage: 'fetch',
-        created_at: new Date().toISOString(),
-      }
-
-      await c.env.CRATE_QUEUE.send(queueMessage)
-
-      return c.json({
-        success: true,
-        message: 'Crate queued for processing',
-        crate_id: newCrate.id,
-        status: newCrate.status,
-      })
-    } catch (error) {
-      console.error('Error queuing crate:', error)
-      return c.json(
-        {
-          success: false,
-          error: 'Failed to queue crate processing',
-          details: String(error),
-        },
-        { status: 500 },
-      )
     }
-  },
-)
+
+    // Create new crate record
+    const newCrate = await crateRepo.createCrate({
+      name: crate_name,
+      version,
+      status: CrateStatus.QUEUED,
+    })
+
+    // Queue the processing task
+    const queueMessage: QueueMessage = {
+      crateId: newCrate.id,
+      crateName: crate_name,
+      version,
+      stage: 'fetch',
+      created_at: new Date().toISOString(),
+    }
+
+    await c.env.CRATE_QUEUE.send(queueMessage)
+
+    return c.json({
+      success: true,
+      message: 'Crate queued for processing',
+      crate_id: newCrate.id,
+      status: newCrate.status,
+    })
+  } catch (error) {
+    console.error('Error queuing crate:', error)
+    return c.json(
+      {
+        success: false,
+        error: 'Failed to queue crate processing',
+        details: String(error),
+      },
+      { status: 500 },
+    )
+  }
+})
 
 // Get crate status
 app.get(
