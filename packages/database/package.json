@@ -7,7 +7,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "types": "wrangler types --include-env false"
+    "types": "wrangler types"
   },
   "dependencies": {
     "@riddick/types": "workspace:*"

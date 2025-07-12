@@ -520,6 +520,13 @@ describe('ItemRepository', () => {
         [ItemType.STRUCT]: 5,
         [ItemType.ENUM]: 2,
         [ItemType.IMPL]: 0,
+        [ItemType.MOD]: 0,
+        [ItemType.TRAIT]: 0,
+        [ItemType.TYPE_ALIAS]: 0,
+        [ItemType.CONST]: 0,
+        [ItemType.STATIC]: 0,
+        [ItemType.USE]: 0,
+        [ItemType.MACRO]: 0,
       })
     })
 
@@ -549,6 +556,13 @@ describe('ItemRepository', () => {
         [ItemType.STRUCT]: 2,
         [ItemType.ENUM]: 0,
         [ItemType.IMPL]: 0,
+        [ItemType.MOD]: 0,
+        [ItemType.TRAIT]: 0,
+        [ItemType.TYPE_ALIAS]: 0,
+        [ItemType.CONST]: 0,
+        [ItemType.STATIC]: 0,
+        [ItemType.USE]: 0,
+        [ItemType.MACRO]: 0,
       })
     })
   })

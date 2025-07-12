@@ -1,3 +1,6 @@
 {
-  "extends": "@riddick/config/tsconfig.package.json"
+  "extends": "@riddick/config/tsconfig.package.json",
+    "compilerOptions": {
+    "types": ["./worker-configuration.d.ts", "@cloudflare/vitest-pool-workers"]
+  }
 }

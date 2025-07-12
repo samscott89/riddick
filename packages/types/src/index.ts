@@ -1,3 +1,30 @@
+// Direct re-exports of generated types
+export type { CrateInfo } from './rust_parser_generated/CrateInfo'
+export type { FieldInfo } from './rust_parser_generated/FieldInfo'
+export type { ItemInfo } from './rust_parser_generated/ItemInfo'
+export type { ModuleInfo } from './rust_parser_generated/ModuleInfo'
+export type { ParameterInfo } from './rust_parser_generated/ParameterInfo'
+export type { ParseError } from './rust_parser_generated/ParseError'
+export type { ParseRequest } from './rust_parser_generated/ParseRequest'
+export type { ParseResponse } from './rust_parser_generated/ParseResponse'
+export type { SourceLocation } from './rust_parser_generated/SourceLocation'
+export type { VariantInfo } from './rust_parser_generated/VariantInfo'
+
+// Keep the ItemType enum as it's useful
+export enum ItemType {
+  FUNCTION = 'function',
+  STRUCT = 'struct',
+  ENUM = 'enum',
+  IMPL = 'impl',
+  MOD = 'mod',
+  TRAIT = 'trait',
+  TYPE_ALIAS = 'type_alias',
+  CONST = 'const',
+  STATIC = 'static',
+  USE = 'use',
+  MACRO = 'macro',
+}
+
 export enum CrateStatus {
   PENDING = 'pending',
   QUEUED = 'queued',
@@ -9,13 +36,6 @@ export enum CrateStatus {
   COMPLETE = 'complete',
   FAILED = 'failed',
   NOT_FOUND = 'not_found',
-}
-
-export enum ItemType {
-  FUNCTION = 'function',
-  STRUCT = 'struct',
-  ENUM = 'enum',
-  IMPL = 'impl',
 }
 
 export interface Crate {

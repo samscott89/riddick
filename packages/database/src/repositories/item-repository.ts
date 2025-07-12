@@ -212,6 +212,13 @@ export class ItemRepository {
       [ItemType.STRUCT]: 0,
       [ItemType.ENUM]: 0,
       [ItemType.IMPL]: 0,
+      [ItemType.MOD]: 0,
+      [ItemType.TRAIT]: 0,
+      [ItemType.TYPE_ALIAS]: 0,
+      [ItemType.CONST]: 0,
+      [ItemType.STATIC]: 0,
+      [ItemType.USE]: 0,
+      [ItemType.MACRO]: 0,
     }
 
     for (const row of result.results) {

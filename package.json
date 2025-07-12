@@ -10,15 +10,13 @@
     "test": "vitest run",
     "build": "pnpm -r build",
     "deploy": "pnpm -r deploy",
-    "lint": "eslint apps packages test --ext .ts",
-    "lint:fix": "eslint apps packages test --ext .ts --fix",
-    "format": "prettier --check \"{apps,packages,test}/**/*.{ts,json}\"",
-    "format:fix": "prettier --write \"{apps,packages,test}/**/*.{ts,json}\"",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "pnpm -r format",
+    "format:fix": "pnpm -r format:fix",
     "check": "pnpm run build && pnpm run lint && pnpm run format && pnpm test",
     "check:fix": "pnpm run format:fix && pnpm run lint:fix && pnpm run check",
-    "migrate:local": "node scripts/migrate.js",
-    "migrate:remote": "node scripts/migrate.js --production",
-    "db:create": "wrangler d1 create riddick-db"
+    "types": "pnpm -r types"
   },
   "repository": {
     "type": "git",
