@@ -7,14 +7,18 @@
     "build": "tsc --noEmit",
     "deploy": "wrangler deploy",
     "test": "vitest run",
-    "types": "wrangler types"
+    "types": "wrangler types",
+    "lint": "eslint src test --ext .ts",
+    "lint:fix": "eslint src test --ext .ts --fix",
+    "format": "prettier --check \"{src,test}/**/*.{ts,json}\"",
+    "format:fix": "prettier --write \"{src,test}/**/*.{ts,json}\""
   },
   "dependencies": {
     "@riddick/database": "workspace:*",
     "@riddick/types": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.8.53",
+    "@riddick/eslint-config": "workspace:*",
     "@riddick/config": "workspace:*"
   }
 }

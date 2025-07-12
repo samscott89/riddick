@@ -6,6 +6,9 @@
     "dev": "wrangler dev",
     "build": "cargo install -q worker-build && worker-build --release",
     "deploy": "wrangler deploy",
-    "types": "cargo test export_bindings && prettier --write bindings/ && mkdir -p ../../packages/types/src/rust_parser_generated/ && cp bindings/*.ts ../../packages/types/src/rust_parser_generated/"
+    "types": "cargo test export_bindings && prettier --write bindings/ && mkdir -p ../../packages/types/src/rust_parser_generated/ && cp bindings/*.ts ../../packages/types/src/rust_parser_generated/",
+    "lint": "cargo clippy",
+    "format": "cargo fmt --check",
+    "format:fix": "cargo fmt"
   }
 }

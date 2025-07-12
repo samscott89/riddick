@@ -1,7 +1,7 @@
-declare module "cloudflare:test" {
-    // Controls the type of `import("cloudflare:test").env`
-    interface ProvidedEnv extends Env {
-        TEST_MIGRATIONS: D1Migration[]; // Defined in `vitest.config.mts`
-        API_KEY: string; // Test API key for authentication
-    }
+declare module 'cloudflare:test' {
+  // Controls the type of `import("cloudflare:test").env`
+  interface ProvidedEnv extends Env {
+    TEST_MIGRATIONS: D1Migration[] // Defined in `vitest.config.mts`
+    API_KEY: string // Test API key for authentication
+  }
 }

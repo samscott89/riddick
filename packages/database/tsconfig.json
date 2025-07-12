@@ -1,6 +1,9 @@
 {
-  "extends": "@riddick/config/tsconfig.package.json",
-    "compilerOptions": {
-    "types": ["./worker-configuration.d.ts", "@cloudflare/vitest-pool-workers"]
-  }
+  "extends": "../config/tsconfig.node.json",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "module": "es2022",
+		"moduleResolution": "bundler",
+    "types": ["./worker-configuration.d.ts", "@cloudflare/vitest-pool-workers", "@types/node"],
+  },
 }
