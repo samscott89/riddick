@@ -1,7 +1,7 @@
 import { SELF, env } from 'cloudflare:test'
 import { describe, it, expect } from 'vitest'
 
-import type { ParseResponse, ParseRequest } from '../src/parser/types'
+import type { ParseResponse, ParseRequest } from '../crate-processor-old/src/parser/types'
 
 const API_KEY = env.API_KEY
 

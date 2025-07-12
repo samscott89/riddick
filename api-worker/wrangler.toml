@@ -12,9 +12,9 @@ database_name = "riddick-db"
 database_id = "local"
 migrations_dir = "../migrations"
 
-[[r2_buckets]]
-binding = "CRATES_STORAGE"
-bucket_name = "riddick-crates"
+# [[r2_buckets]]
+# binding = "CRATES_STORAGE"
+# bucket_name = "riddick-crates"
 
 # [env.production]
 # name = "riddick-api-production"

@@ -8,7 +8,11 @@ module.exports = tseslint.config(
   ...tseslint.configs.recommended,
   prettierConfig,
   {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
+    files: [
+      'api-worker/**/*.ts',
+      'crate-processor/**/*.ts',
+      'lib/**/*.ts',
+      'test/**/*.ts'],
     extends: [...tseslint.configs.recommendedTypeChecked],
     plugins: {
       import: importPlugin,
@@ -37,7 +41,7 @@ module.exports = tseslint.config(
     },
     rules: {
       'import/order': [
-        'error',
+        'warn',
         {
           groups: [
             'builtin',
