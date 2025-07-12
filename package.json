@@ -16,7 +16,10 @@
     "format:fix": "pnpm -r format:fix",
     "check": "pnpm run build && pnpm run lint && pnpm run format && pnpm test",
     "check:fix": "pnpm run format:fix && pnpm run lint:fix && pnpm run check",
-    "types": "pnpm -r types"
+    "types": "pnpm -r types",
+    "dev:api": "pnpm --filter @riddick/api dev",
+    "dev:workflow": "pnpm --filter @riddick/crate-workflow dev",
+    "dev:parser": "pnpm --filter @riddick/rust-parser dev"
   },
   "repository": {
     "type": "git",
@@ -41,6 +44,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.53",
+    "@riddick/config": "workspace:^",
     "@types/eslint": "9.6.1",
 		"@typescript-eslint/eslint-plugin": "8.36.0",
 		"@typescript-eslint/parser": "8.36.0",
