@@ -2,21 +2,20 @@
   "name": "riddick",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "private": true,
+  "type": "module",
+	"sideEffects": false,
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "pnpm -r dev",
     "test": "vitest run",
-    "build": "tsc --noEmit false",
-    "deploy": "wrangler deploy",
-    "lint": "eslint api-worker crate-processor, lib test --ext .ts",
-    "lint:fix": "eslint api-worker crate-processor lib test --ext .ts --fix",
-    "format": "prettier --check \"{api-worker,crate-processor,lib,test}/**/*.{ts,json}\"",
-    "format:fix": "prettier --write \"{api-worker,crate-processor,lib,test}/**/*.{ts,json}\"",
-    "check": "npm run build && npm run lint && npm run format && npm test",
-    "check:fix": "npm run format:fix && npm run lint:fix && npm run check",
-    "build:wasm": "cd rust-parser && wasm-pack build --target bundler --out-dir ../crate-processor/src/parser/wasm",
-    "generate:types": "cd rust-parser && cargo test export_bindings && mkdir -p ../crate-processor/src/parser/generated && cp bindings/*.ts ../crate-processor/src/parser/generated/ && cd .. && prettier --write \"crate-processor/src/parser/generated/*.ts\"",
-    "build:all": "npm run generate:types && npm run build:wasm",
+    "build": "pnpm -r build",
+    "deploy": "pnpm -r deploy",
+    "lint": "eslint apps packages test --ext .ts",
+    "lint:fix": "eslint apps packages test --ext .ts --fix",
+    "format": "prettier --check \"{apps,packages,test}/**/*.{ts,json}\"",
+    "format:fix": "prettier --write \"{apps,packages,test}/**/*.{ts,json}\"",
+    "check": "pnpm run build && pnpm run lint && pnpm run format && pnpm test",
+    "check:fix": "pnpm run format:fix && pnpm run lint:fix && pnpm run check",
     "migrate:local": "node scripts/migrate.js",
     "migrate:remote": "node scripts/migrate.js --production",
     "db:create": "wrangler d1 create riddick-db"
@@ -28,7 +27,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/samscott89/riddick/issues"
   },
@@ -46,6 +44,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.53",
     "@eslint/js": "^9.30.1",
+    "@riddick/config": "workspace:*",
     "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^8.36.0",
     "eslint": "^9.30.1",
@@ -57,8 +56,6 @@
     "prettier": "^3.6.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.36.0",
-    "vite-plugin-wasm": "^3.5.0",
-    "vitest": "~3.2.0",
     "wrangler": "^4.24.0"
   },
   "dependencies": {

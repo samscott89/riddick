@@ -1,0 +1,5 @@
+{
+    "typescript.preferences.autoImportSpecifierExcludeRegexes": ["^(node:)?os$"],
+	"typescript.preferences.autoImportFileExcludePatterns": ["**/vitest/dist/**"],
+	"typescript.preferences.importModuleSpecifier": "non-relative",
+}

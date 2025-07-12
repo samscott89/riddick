@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "rust-parser-worker",
+  "main": "build/worker/shim.mjs",
+  "compatibility_date": "2025-07-12",
+  
+  "build": {
+    "command": "cargo install -q worker-build && worker-build --release"
+  },
+  
+  // Service will be available for RPC calls from other workers
+  
+  // Parser doesn't need database or storage access
+}

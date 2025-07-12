@@ -1,0 +1,3 @@
+{
+  "extends": "@riddick/config/tsconfig.app.json"
+}

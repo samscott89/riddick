@@ -1,0 +1,10 @@
+{
+  "name": "@riddick/rust-parser",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "cargo install -q worker-build && worker-build --release",
+    "deploy": "wrangler deploy"
+  }
+}

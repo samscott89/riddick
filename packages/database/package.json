@@ -1,0 +1,21 @@
+{
+  "name": "@riddick/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "types": "wrangler types --include-env false"
+  },
+  "dependencies": {
+    "@riddick/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.53",
+    "@riddick/config": "workspace:*",
+    "typescript": "^5.8.3",
+    "vitest": "~3.2.0"
+  }
+}

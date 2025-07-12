@@ -9,10 +9,9 @@ module.exports = tseslint.config(
   prettierConfig,
   {
     files: [
-      'api-worker/**/*.ts',
-      'crate-processor/**/*.ts',
-      'lib/**/*.ts',
-      'test/**/*.ts'],
+      'app/**/*.ts',
+      'packages/**/*.ts',
+    ],
     extends: [...tseslint.configs.recommendedTypeChecked],
     plugins: {
       import: importPlugin,

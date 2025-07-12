@@ -24,6 +24,7 @@ target
 .notes/
 
 dist/
+node_modules/
 
 
 # This directory is used by Wrangler to store local state, such as the last deployed version.

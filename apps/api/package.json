@@ -1,0 +1,22 @@
+{
+  "name": "@riddick/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.0",
+    "hono": "^4.8.4",
+    "zod": "^4.0.5",
+    "@riddick/database": "workspace:*",
+    "@riddick/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@riddick/config": "workspace:*"
+  }
+}
