@@ -6,7 +6,8 @@
   "types": "src/index.ts",
   "scripts": {
     "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate-fixtures": "node scripts/generate-fixtures.js"
   },
   "dependencies": {
     "@riddick/types": "workspace:*"
