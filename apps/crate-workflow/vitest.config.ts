@@ -21,6 +21,7 @@ export default defineWorkersConfig(async () => {
 
   const options: WorkersUserConfigExport = {
     test: {
+      exclude: ['**/*.unit.test.ts'],
       provide: {
         // Provide fixtures to all tests
         // we do this here because it uses `node` in the
