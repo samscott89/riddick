@@ -19,8 +19,11 @@
     "pako": "^2.1.0"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.53",
     "@riddick/eslint-config": "workspace:*",
     "@riddick/config": "workspace:*",
-    "@types/pako": "^2.0.3"
+    "@riddick/fixtures": "workspace:*",
+    "@types/pako": "^2.0.3",
+    "vitest": "^3.2.0"
   }
 }

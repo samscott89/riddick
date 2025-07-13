@@ -22,64 +22,24 @@ export interface Env {
   CRATE_BUCKET: R2Bucket
   RUST_PARSER: RustParser
   CRATE_WORKFLOW: Workflow
-  CRATE_QUEUE: Queue<QueueMessage>
   AI: Ai
 }
 
-interface CrateProcessingParams {
+export interface CrateProcessingParams {
   crateId: number
   crateName: string
   version: string
 }
 
-export class CrateProcessingWorkflow extends WorkflowEntrypoint<
-  Env,
-  CrateProcessingParams
-> {
-  async run(event: WorkflowEvent<CrateProcessingParams>, step: WorkflowStep) {
-    console.log(
-      `Starting crate processing for ${event.payload.crateName} v${event.payload.version}`,
-    )
-    const { crateId, crateName, version } = event.payload
-    const db = new DatabaseService(this.env.DB)
+export interface CrateAiSummary {
+  crateSummary: string
+  moduleSummaries: Map<number, string>
+}
 
-    await step.do('update-status-processing', async () => {
-      await db.updateCrateProgress(crateId, CrateStatus.PARSING)
-    })
+export class CrateProcessor {
+  constructor(private env: Env) {}
 
-    let crateData: CrateWithData
-
-    try {
-      crateData = await step.do('fetch-crate-data', async () => {
-        return await this.fetchCrateData(crateName, version)
-      })
-
-      const parsedData = await step.do('parse-rust-files', async () => {
-        return await this.parseRustFiles(crateData.files)
-      })
-
-      await step.do('store-parsed-data', async () => {
-        await this.storeParsedData(crateId, parsedData)
-      })
-
-      await step.do('generate-summaries', async () => {
-        await this.generateSummaries(crateId)
-      })
-
-      await step.do('update-status-completed', async () => {
-        await db.updateCrateProgress(crateId, CrateStatus.COMPLETE)
-      })
-    } catch (error) {
-      await step.do('update-status-failed', async () => {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error'
-        await db.updateCrateProgress(crateId, CrateStatus.FAILED, errorMessage)
-      })
-      throw error
-    }
-  }
-
-  private async fetchCrateData(
+  async fetchCrateData(
     crateName: string,
     version: string,
   ): Promise<CrateWithData> {
@@ -125,13 +85,13 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
     }
   }
 
-  private async extractRustFiles(
+  async extractRustFiles(
     tarballData: Uint8Array,
   ): Promise<Array<{ path: string; content: string }>> {
     return await TarExtractor.extractRustFiles(tarballData)
   }
 
-  private async parseRustFiles(
+  async parseRustFiles(
     files: Array<{ path: string; content: string }>,
   ): Promise<Array<{ path: string; content: string; parsed: any }>> {
     const parsedFiles = []
@@ -163,7 +123,7 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
     return parsedFiles
   }
 
-  private async storeParsedData(
+  async storeParsedData(
     crateId: number,
     parsedFiles: Array<{ path: string; content: string; parsed: any }>,
   ) {
@@ -192,18 +152,20 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
     }
   }
 
-  private async generateSummaries(crateId: number) {
+  async generateSummaries(crateId: number): Promise<CrateAiSummary> {
     const db = new DatabaseService(this.env.DB)
+
+    const moduleSummaries = new Map()
 
     // Get crate data
     const { crate, modules, items } =
       await db.getCrateWithModulesAndItems(crateId)
-    if (!crate) return
+    if (!crate) throw new Error(`Crate with ID ${crateId} not found`)
 
     // Generate crate-level summary
     const crateContext = modules.map((m) => `Module: ${m.path}`).join('\n\n')
 
-    const _crateSummary = await this.generateAISummary(
+    const crateSummary = await this.generateAISummary(
       `Summarize this Rust crate "${crate.name}" based on its modules:
 
 ${crateContext}
@@ -222,7 +184,7 @@ Provide a concise summary of what this crate does, its main purpose, and key fun
         .join('\n')
 
       if (itemsContext) {
-        const _moduleSummary = await this.generateAISummary(
+        const moduleSummary = await this.generateAISummary(
           `Summarize this Rust module "${module.path}" based on its contents:
 
 ${itemsContext}
@@ -230,7 +192,7 @@ ${itemsContext}
 Explain what this module does and its role in the crate.`,
         )
 
-        // For now, we'll skip module updates as the interface isn't clear
+        moduleSummaries.set(module.id, moduleSummary)
       }
     }
 
@@ -238,29 +200,112 @@ Explain what this module does and its role in the crate.`,
     console.log(
       `Generated summaries for crate ${crateId} with ${modules.length} modules and ${items.length} items`,
     )
+
+    return { crateSummary, moduleSummaries }
   }
 
-  private async generateAISummary(prompt: string): Promise<string> {
+  async generateAISummary(prompt: string): Promise<string> {
     try {
-      // const response = await this.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
-      //   messages: [
-      //     {
-      //       role: 'system',
-      //       content:
-      //         'You are a helpful assistant that explains Rust code. Be concise and technical.',
-      //     },
-      //     {
-      //       role: 'user',
-      //       content: prompt,
-      //     },
-      //   ],
-      //   max_tokens: 200,
-      // })
+      const { response } = await this.env.AI.run(
+        '@cf/meta/llama-3.1-8b-instruct',
+        {
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a helpful assistant that explains Rust code. Be concise and technical.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          max_tokens: 200,
+        },
+      )
 
-      return 'AI summary placeholder'
+      return response || 'AI summary unavailable'
     } catch (error) {
       console.warn('AI summary generation failed:', error)
       return 'AI summary unavailable'
+    }
+  }
+
+  async storeCompletedCrate(
+    crateId: number,
+    crateSummary: string,
+    moduleSummaries: Map<number, string>,
+  ): Promise<void> {
+    const db = new DatabaseService(this.env.DB)
+
+    // Store crate summary
+    await db.crates.updateCrateSummary(crateId, crateSummary)
+
+    // Store module summaries
+    for (const [id, summary] of moduleSummaries.entries()) {
+      await db.modules.updateModuleSummary({
+        id,
+        summary,
+      })
+    }
+
+    // Update crate status to COMPLETED
+    await db.updateCrateProgress(crateId, CrateStatus.COMPLETE)
+
+    console.log(`Crate ${crateId} processing completed successfully`)
+  }
+}
+
+export class CrateProcessingWorkflow extends WorkflowEntrypoint<
+  Env,
+  CrateProcessingParams
+> {
+  async run(event: WorkflowEvent<CrateProcessingParams>, step: WorkflowStep) {
+    console.log(
+      `Starting crate processing for ${event.payload.crateName} v${event.payload.version}`,
+    )
+    const { crateId, crateName, version } = event.payload
+    const db = new DatabaseService(this.env.DB)
+
+    await step.do('update-status-processing', async () => {
+      await db.updateCrateProgress(crateId, CrateStatus.PARSING)
+    })
+
+    let crateData: CrateWithData
+
+    const crateProcessor = new CrateProcessor(this.env)
+
+    try {
+      crateData = await step.do('fetch-crate-data', async () => {
+        return await crateProcessor.fetchCrateData(crateName, version)
+      })
+
+      const parsedData = await step.do('parse-rust-files', async () => {
+        return await crateProcessor.parseRustFiles(crateData.files)
+      })
+
+      await step.do('store-parsed-data', async () => {
+        await crateProcessor.storeParsedData(crateId, parsedData)
+      })
+
+      const summary = await step.do('generate-summaries', async () => {
+        return await crateProcessor.generateSummaries(crateId)
+      })
+
+      await step.do('update-status-completed', async () => {
+        return await crateProcessor.storeCompletedCrate(
+          crateId,
+          summary.crateSummary,
+          summary.moduleSummaries,
+        )
+      })
+    } catch (error) {
+      await step.do('update-status-failed', async () => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error'
+        await db.updateCrateProgress(crateId, CrateStatus.FAILED, errorMessage)
+      })
+      throw error
     }
   }
 }

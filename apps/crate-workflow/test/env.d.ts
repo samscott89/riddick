@@ -1,7 +1,13 @@
+interface RustParser extends Fetcher {
+  parse_rust_code(input: { code: string; option?: any }): Promise<ParseResponse>
+}
+
 declare module 'cloudflare:test' {
-  // Controls the type of `import("cloudflare:test").env`
   interface ProvidedEnv extends Env {
-    TEST_MIGRATIONS: D1Migration[] // Defined in `vitest.config.mts`
-    API_KEY: string // Test API key for authentication
+    DB: D1Database
+    CRATE_BUCKET: R2Bucket
+    RUST_PARSER: RustParser
+    CRATE_WORKFLOW: Workflow
+    AI: Ai
   }
 }

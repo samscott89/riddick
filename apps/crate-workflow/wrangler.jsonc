@@ -11,6 +11,11 @@
 		"enabled": true,
 		"head_sampling_rate": 1
 	},
+	"compatibility_flags": [
+		// Required for `SELF.queue()`
+		// NOTE: this *only* works for tests
+		"service_binding_extra_handlers"
+	],
 	"workflows": [
 		{
 			"name": "crate-processing-workflow",
@@ -18,8 +23,6 @@
 			"class_name": "CrateProcessingWorkflow"
 		}
 	],
-
-
 	"services": [
 		{
 			"binding": "RUST_PARSER",
@@ -49,12 +52,6 @@
 				"queue": "crate-processing",
 				"max_batch_size": 1,
 				"max_batch_timeout": 30
-			}
-		],
-		"producers": [
-			{
-				"queue": "crate-processing",
-				"binding": "CRATE_QUEUE"
 			}
 		]
 	},

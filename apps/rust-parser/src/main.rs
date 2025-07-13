@@ -1,10 +1,10 @@
-use std::fs;
 use std::env;
+use std::fs;
 use std::path::Path;
 
 mod parser;
 
-use parser::{parse_rust_code, ParseRequest};
+use parser::parse_rust_code;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -14,16 +14,16 @@ fn main() {
     }
 
     let file_path = &args[1];
-    
+
     if !Path::new(file_path).exists() {
-        eprintln!("Error: File '{}' does not exist", file_path);
+        eprintln!("Error: File '{file_path}' does not exist");
         std::process::exit(1);
     }
 
     let code = match fs::read_to_string(file_path) {
         Ok(content) => content,
         Err(err) => {
-            eprintln!("Error reading file '{}': {}", file_path, err);
+            eprintln!("Error reading file '{file_path}': {err}");
             std::process::exit(1);
         }
     };
@@ -32,15 +32,15 @@ fn main() {
         Ok(response) => {
             // Pretty print the JSON output
             match serde_json::to_string_pretty(&response) {
-                Ok(json) => println!("{}", json),
+                Ok(json) => println!("{json}"),
                 Err(err) => {
-                    eprintln!("Error serializing response: {}", err);
+                    eprintln!("Error serializing response: {err}");
                     std::process::exit(1);
                 }
             }
         }
         Err(err) => {
-            eprintln!("Error parsing Rust code: {}", err);
+            eprintln!("Error parsing Rust code: {err}");
             std::process::exit(1);
         }
     }
