@@ -32,16 +32,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: TypeScript compilation
-        run: pnpm -F "\!@riddick/rust-parser" build
+        run: pnpm -F "!@riddick/rust-parser" build
 
       - name: ESLint
-        run: pnpm -F "\!@riddick/rust-parser" lint
+        run: pnpm -F "!@riddick/rust-parser" lint
 
       - name: Prettier check
-        run: pnpm -F "\!@riddick/rust-parser" format
+        run: pnpm -F "!@riddick/rust-parser" format
 
       - name: Run tests
-        run: pnpm -F "\!@riddick/rust-parser" test
+        run: pnpm -F "!@riddick/rust-parser" test
 
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v4
