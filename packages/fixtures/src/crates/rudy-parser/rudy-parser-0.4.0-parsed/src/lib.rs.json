@@ -1,0 +1,214 @@
+{
+  "success": true,
+  "parseTime": 100,
+  "crateInfo": {
+    "name": "unnamed",
+    "modules": [
+      {
+        "name": "main",
+        "path": "main.rs",
+        "items": [
+          {
+            "type": "mod",
+            "name": "expressions",
+            "visibility": "pub",
+            "location": {
+              "startLine": 1,
+              "startColumn": 21,
+              "endLine": 1,
+              "endColumn": 21,
+              "startByte": 252,
+              "endByte": 272
+            },
+            "sourceCode": "pub mod expressions;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "mod",
+            "name": "types",
+            "visibility": "pub",
+            "location": {
+              "startLine": 1,
+              "startColumn": 15,
+              "endLine": 1,
+              "endColumn": 15,
+              "startByte": 273,
+              "endByte": 287
+            },
+            "sourceCode": "pub mod types;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "use",
+            "name": "expressions::{Expression, parse_expression}",
+            "visibility": "pub",
+            "location": {
+              "startLine": 1,
+              "startColumn": 53,
+              "endLine": 1,
+              "endColumn": 53,
+              "startByte": 289,
+              "endByte": 341
+            },
+            "sourceCode": "pub use expressions::{Expression, parse_expression};",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "use",
+            "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
+            "visibility": "pub",
+            "location": {
+              "startLine": 1,
+              "startColumn": 69,
+              "endLine": 1,
+              "endColumn": 69,
+              "startByte": 342,
+              "endByte": 410
+            },
+            "sourceCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          }
+        ],
+        "location": {
+          "startLine": 1,
+          "startColumn": 1,
+          "endLine": 12,
+          "endColumn": 1,
+          "startByte": 0,
+          "endByte": 411
+        }
+      }
+    ],
+    "rootModule": {
+      "name": "main",
+      "path": "main.rs",
+      "items": [
+        {
+          "type": "mod",
+          "name": "expressions",
+          "visibility": "pub",
+          "location": {
+            "startLine": 1,
+            "startColumn": 21,
+            "endLine": 1,
+            "endColumn": 21,
+            "startByte": 252,
+            "endByte": 272
+          },
+          "sourceCode": "pub mod expressions;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "mod",
+          "name": "types",
+          "visibility": "pub",
+          "location": {
+            "startLine": 1,
+            "startColumn": 15,
+            "endLine": 1,
+            "endColumn": 15,
+            "startByte": 273,
+            "endByte": 287
+          },
+          "sourceCode": "pub mod types;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "use",
+          "name": "expressions::{Expression, parse_expression}",
+          "visibility": "pub",
+          "location": {
+            "startLine": 1,
+            "startColumn": 53,
+            "endLine": 1,
+            "endColumn": 53,
+            "startByte": 289,
+            "endByte": 341
+          },
+          "sourceCode": "pub use expressions::{Expression, parse_expression};",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "use",
+          "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
+          "visibility": "pub",
+          "location": {
+            "startLine": 1,
+            "startColumn": 69,
+            "endLine": 1,
+            "endColumn": 69,
+            "startByte": 342,
+            "endByte": 410
+          },
+          "sourceCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        }
+      ],
+      "location": {
+        "startLine": 1,
+        "startColumn": 1,
+        "endLine": 12,
+        "endColumn": 1,
+        "startByte": 0,
+        "endByte": 411
+      }
+    }
+  },
+  "errors": []
+}

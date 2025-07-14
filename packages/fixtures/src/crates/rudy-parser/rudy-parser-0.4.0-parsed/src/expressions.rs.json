@@ -1,0 +1,872 @@
+{
+  "success": true,
+  "parseTime": 100,
+  "crateInfo": {
+    "name": "unnamed",
+    "modules": [
+      {
+        "name": "main",
+        "path": "main.rs",
+        "items": [
+          {
+            "type": "use",
+            "name": "std::fmt",
+            "visibility": "private",
+            "location": {
+              "startLine": 1,
+              "startColumn": 14,
+              "endLine": 1,
+              "endColumn": 14,
+              "startByte": 240,
+              "endByte": 253
+            },
+            "sourceCode": "use std::fmt;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "use",
+            "name": "anyhow::{Result, anyhow}",
+            "visibility": "private",
+            "location": {
+              "startLine": 1,
+              "startColumn": 30,
+              "endLine": 1,
+              "endColumn": 30,
+              "startByte": 255,
+              "endByte": 284
+            },
+            "sourceCode": "use anyhow::{Result, anyhow};",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "use",
+            "name": "itertools::Itertools",
+            "visibility": "private",
+            "location": {
+              "startLine": 1,
+              "startColumn": 26,
+              "endLine": 1,
+              "endColumn": 26,
+              "startByte": 285,
+              "endByte": 310
+            },
+            "sourceCode": "use itertools::Itertools;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "enum",
+            "name": "Expression",
+            "visibility": "pub",
+            "location": {
+              "startLine": 10,
+              "startColumn": 59,
+              "endLine": 55,
+              "endColumn": 2,
+              "startByte": 312,
+              "endByte": 1715
+            },
+            "sourceCode": "/// Represents a parsed expression\n#[derive(Debug, Clone, PartialEq)]\npub enum Expression {\n    /// Simple variable reference (e.g., `foo`)\n    Variable(String),\n\n    /// Path expression (e.g., `std::vec::Vec`, `lldb_demo::User`)\n    Path(Vec<String>),\n\n    /// Generic type (e.g., `Vec<String>`, `HashMap<String, u32>`)\n    Generic { base: String, args: Vec<String> },\n\n    /// Field access (e.g., `foo.bar`, `self.field`)\n    FieldAccess {\n        base: Box<Expression>,\n        field: String,\n    },\n\n    /// Array/slice indexing (e.g., `arr[5]`, `slice[idx]`)\n    Index {\n        base: Box<Expression>,\n        index: Box<Expression>,\n    },\n\n    /// Pointer dereferencing (e.g., `*ptr`, `**ptr_ptr`)\n    Deref(Box<Expression>),\n\n    /// Address-of operator (e.g., `&var`, `&mut var`)\n    AddressOf {\n        mutable: bool,\n        expr: Box<Expression>,\n    },\n\n    /// Literal number (e.g., `42`, `0xff`)\n    NumberLiteral(u64),\n\n    /// String literal (e.g., `\"hello\"`, `\"created\"`)\n    StringLiteral(String),\n\n    /// Parenthesized expression (e.g., `(foo)`)\n    Parenthesized(Box<Expression>),\n\n    /// Method call (e.g., `foo.bar()`, `vec.len()`)\n    MethodCall {\n        base: Box<Expression>,\n        method: String,\n        args: Vec<Expression>,\n    },\n\n    /// Function call (e.g., `foo()`, `bar(1, 2)`)\n    FunctionCall {\n        function: String,\n        args: Vec<Expression>,\n    },\n}",
+            "attributes": [
+              "#[derive(Debug, Clone, PartialEq)]"
+            ],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": [
+              {
+                "name": "Variable",
+                "discriminant": null
+              },
+              {
+                "name": "Path",
+                "discriminant": null
+              },
+              {
+                "name": "Generic",
+                "discriminant": null
+              },
+              {
+                "name": "FieldAccess",
+                "discriminant": null
+              },
+              {
+                "name": "Index",
+                "discriminant": null
+              },
+              {
+                "name": "Deref",
+                "discriminant": null
+              },
+              {
+                "name": "AddressOf",
+                "discriminant": null
+              },
+              {
+                "name": "NumberLiteral",
+                "discriminant": null
+              },
+              {
+                "name": "StringLiteral",
+                "discriminant": null
+              },
+              {
+                "name": "Parenthesized",
+                "discriminant": null
+              },
+              {
+                "name": "MethodCall",
+                "discriminant": null
+              },
+              {
+                "name": "FunctionCall",
+                "discriminant": null
+              }
+            ],
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "fmt::Display for Expression",
+            "visibility": "private",
+            "location": {
+              "startLine": 28,
+              "startColumn": 2,
+              "endLine": 28,
+              "endColumn": 2,
+              "startByte": 1717,
+              "endByte": 3051
+            },
+            "sourceCode": "impl fmt::Display for Expression {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            Expression::Variable(name) => write!(f, \"{name}\"),\n            Expression::Path(segments) => write!(f, \"{}\", segments.join(\"::\")),\n            Expression::Generic { base, args } => write!(f, \"{}<{}>\", base, args.join(\", \")),\n            Expression::FieldAccess { base, field } => write!(f, \"{base}.{field}\"),\n            Expression::Index { base, index } => write!(f, \"{base}[{index}]\"),\n            Expression::Deref(expr) => write!(f, \"*{expr}\"),\n            Expression::AddressOf { mutable, expr } => {\n                if *mutable {\n                    write!(f, \"&mut {expr}\")\n                } else {\n                    write!(f, \"&{expr}\")\n                }\n            }\n            Expression::NumberLiteral(value) => write!(f, \"{value}\"),\n            Expression::StringLiteral(value) => write!(f, \"\\\"{value}\\\"\"),\n            Expression::Parenthesized(expr) => write!(f, \"({expr})\"),\n            Expression::MethodCall { base, method, args } => {\n                write!(f, \"{base}.{method}({})\", args.iter().join(\", \"))\n            }\n            Expression::FunctionCall { function, args } => {\n                write!(f, \"{function}({})\", args.iter().join(\", \"))\n            }\n        }\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Expression",
+            "traitName": "fmt::Display"
+          },
+          {
+            "type": "enum",
+            "name": "Token",
+            "visibility": "private",
+            "location": {
+              "startLine": 28,
+              "startColumn": 2,
+              "endLine": 28,
+              "endColumn": 2,
+              "startByte": 3053,
+              "endByte": 3476
+            },
+            "sourceCode": "/// Simple tokenizer for expressions\n#[derive(Debug, Clone, PartialEq)]\nenum Token {\n    Identifier(String),\n    Number(u64),\n    String(String),\n    Dot,\n    Star,\n    Ampersand,\n    /// '['\n    LeftBracket,\n    /// ']'\n    RightBracket,\n    /// '('\n    LeftParen,\n    /// ')'\n    RightParen,\n    /// '<'\n    LeftAngle,\n    /// '>'\n    RightAngle,\n    /// '::'\n    PathSeparator,\n    /// ','\n    Comma,\n    Mut,\n    Eof,\n}",
+            "attributes": [
+              "#[derive(Debug, Clone, PartialEq)]"
+            ],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": [
+              {
+                "name": "Identifier",
+                "discriminant": null
+              },
+              {
+                "name": "Number",
+                "discriminant": null
+              },
+              {
+                "name": "String",
+                "discriminant": null
+              },
+              {
+                "name": "Dot",
+                "discriminant": null
+              },
+              {
+                "name": "Star",
+                "discriminant": null
+              },
+              {
+                "name": "Ampersand",
+                "discriminant": null
+              },
+              {
+                "name": "LeftBracket",
+                "discriminant": null
+              },
+              {
+                "name": "RightBracket",
+                "discriminant": null
+              },
+              {
+                "name": "LeftParen",
+                "discriminant": null
+              },
+              {
+                "name": "RightParen",
+                "discriminant": null
+              },
+              {
+                "name": "LeftAngle",
+                "discriminant": null
+              },
+              {
+                "name": "RightAngle",
+                "discriminant": null
+              },
+              {
+                "name": "PathSeparator",
+                "discriminant": null
+              },
+              {
+                "name": "Comma",
+                "discriminant": null
+              },
+              {
+                "name": "Mut",
+                "discriminant": null
+              },
+              {
+                "name": "Eof",
+                "discriminant": null
+              }
+            ],
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "struct",
+            "name": "Tokenizer",
+            "visibility": "private",
+            "location": {
+              "startLine": 4,
+              "startColumn": 2,
+              "endLine": 4,
+              "endColumn": 2,
+              "startByte": 3478,
+              "endByte": 3543
+            },
+            "sourceCode": "struct Tokenizer<'a> {\n    input: &'a str,\n    position: usize,\n}",
+            "attributes": [],
+            "genericParameters": [
+              "'a"
+            ],
+            "parameters": null,
+            "returnType": null,
+            "fields": [
+              {
+                "name": "input",
+                "fieldType": "&'a str",
+                "visibility": "private"
+              },
+              {
+                "name": "position",
+                "fieldType": "usize",
+                "visibility": "private"
+              }
+            ],
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "Tokenizer<'a>",
+            "visibility": "private",
+            "location": {
+              "startLine": 119,
+              "startColumn": 40,
+              "endLine": 169,
+              "endColumn": 2,
+              "startByte": 3545,
+              "endByte": 8648
+            },
+            "sourceCode": "impl<'a> Tokenizer<'a> {\n    fn new(input: &'a str) -> Self {\n        Self { input, position: 0 }\n    }\n\n    fn current_char(&self) -> Option<char> {\n        self.input.chars().nth(self.position)\n    }\n\n    fn advance(&mut self) {\n        if self.position < self.input.len() {\n            self.position += 1;\n        }\n    }\n\n    fn skip_whitespace(&mut self) {\n        while let Some(ch) = self.current_char() {\n            if ch.is_whitespace() {\n                self.advance();\n            } else {\n                break;\n            }\n        }\n    }\n\n    fn read_identifier(&mut self) -> String {\n        let start = self.position;\n        while let Some(ch) = self.current_char() {\n            if ch.is_ascii_alphanumeric() || ch == '_' {\n                self.advance();\n            } else {\n                break;\n            }\n        }\n        self.input[start..self.position].to_string()\n    }\n\n    fn read_number(&mut self) -> Result<u64> {\n        let start = self.position;\n\n        // Check for hex prefix\n        if self.input[self.position..].starts_with(\"0x\")\n            || self.input[self.position..].starts_with(\"0X\")\n        {\n            self.advance(); // skip '0'\n            self.advance(); // skip 'x'\n            while let Some(ch) = self.current_char() {\n                if ch.is_ascii_hexdigit() {\n                    self.advance();\n                } else {\n                    break;\n                }\n            }\n            let hex_str = &self.input[start + 2..self.position];\n            u64::from_str_radix(hex_str, 16).map_err(|e| anyhow!(\"Invalid hex number: {}\", e))\n        } else {\n            // Regular decimal number\n            while let Some(ch) = self.current_char() {\n                if ch.is_ascii_digit() {\n                    self.advance();\n                } else {\n                    break;\n                }\n            }\n            self.input[start..self.position]\n                .parse()\n                .map_err(|e| anyhow!(\"Invalid number: {}\", e))\n        }\n    }\n\n    fn read_string(&mut self) -> Result<String> {\n        // Skip opening quote\n        self.advance();\n        let start = self.position;\n\n        while let Some(ch) = self.current_char() {\n            if ch == '\"' {\n                // Found closing quote\n                let content = self.input[start..self.position].to_string();\n                self.advance(); // Skip closing quote\n                return Ok(content);\n            } else if ch == '\\\\' {\n                // Handle escape sequences (basic support)\n                self.advance(); // Skip backslash\n                if self.current_char().is_some() {\n                    self.advance(); // Skip escaped character\n                }\n            } else {\n                self.advance();\n            }\n        }\n\n        Err(anyhow!(\"Unterminated string literal\"))\n    }\n\n    fn next_token(&mut self) -> Result<Token> {\n        self.skip_whitespace();\n\n        match self.current_char() {\n            None => Ok(Token::Eof),\n            Some('.') => {\n                self.advance();\n                Ok(Token::Dot)\n            }\n            Some('*') => {\n                self.advance();\n                Ok(Token::Star)\n            }\n            Some('&') => {\n                self.advance();\n                Ok(Token::Ampersand)\n            }\n            Some('[') => {\n                self.advance();\n                Ok(Token::LeftBracket)\n            }\n            Some(']') => {\n                self.advance();\n                Ok(Token::RightBracket)\n            }\n            Some('(') => {\n                self.advance();\n                Ok(Token::LeftParen)\n            }\n            Some(')') => {\n                self.advance();\n                Ok(Token::RightParen)\n            }\n            Some('<') => {\n                self.advance();\n                Ok(Token::LeftAngle)\n            }\n            Some('>') => {\n                self.advance();\n                Ok(Token::RightAngle)\n            }\n            Some(':') => {\n                self.advance();\n                if self.current_char() == Some(':') {\n                    self.advance();\n                    Ok(Token::PathSeparator)\n                } else {\n                    Err(anyhow!(\"Expected '::' but found single ':'\"))\n                }\n            }\n            Some(',') => {\n                self.advance();\n                Ok(Token::Comma)\n            }\n            Some(ch) if ch.is_ascii_alphabetic() || ch == '_' => {\n                let ident = self.read_identifier();\n                if ident == \"mut\" {\n                    Ok(Token::Mut)\n                } else {\n                    Ok(Token::Identifier(ident))\n                }\n            }\n            Some(ch) if ch.is_ascii_digit() => {\n                let number = self.read_number()?;\n                Ok(Token::Number(number))\n            }\n            Some('\"') => {\n                let string = self.read_string()?;\n                Ok(Token::String(string))\n            }\n            Some(ch) => Err(anyhow!(\"Unexpected character: '{}'\", ch)),\n        }\n    }\n}",
+            "attributes": [],
+            "genericParameters": [
+              "'a"
+            ],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Tokenizer<'a>",
+            "traitName": null
+          },
+          {
+            "type": "struct",
+            "name": "Parser",
+            "visibility": "private",
+            "location": {
+              "startLine": 5,
+              "startColumn": 2,
+              "endLine": 5,
+              "endColumn": 2,
+              "startByte": 8650,
+              "endByte": 8748
+            },
+            "sourceCode": "/// Simple recursive descent parser\nstruct Parser {\n    tokens: Vec<Token>,\n    position: usize,\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": [
+              {
+                "name": "tokens",
+                "fieldType": "Vec<Token>",
+                "visibility": "private"
+              },
+              {
+                "name": "position",
+                "fieldType": "usize",
+                "visibility": "private"
+              }
+            ],
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "Parser",
+            "visibility": "private",
+            "location": {
+              "startLine": 260,
+              "startColumn": 61,
+              "endLine": 271,
+              "endColumn": 2,
+              "startByte": 8750,
+              "endByte": 17813
+            },
+            "sourceCode": "impl Parser {\n    fn new(input: &str) -> Result<Self> {\n        let mut tokenizer = Tokenizer::new(input);\n        let mut tokens = Vec::new();\n\n        loop {\n            let token = tokenizer.next_token()?;\n            let is_eof = token == Token::Eof;\n            tokens.push(token);\n            if is_eof {\n                break;\n            }\n        }\n\n        Ok(Self {\n            tokens,\n            position: 0,\n        })\n    }\n\n    fn current_token(&self) -> &Token {\n        self.tokens.get(self.position).unwrap_or(&Token::Eof)\n    }\n\n    fn advance(&mut self) {\n        if self.position < self.tokens.len() {\n            self.position += 1;\n        }\n    }\n\n    fn expect(&mut self, expected: Token) -> Result<()> {\n        if std::mem::discriminant(self.current_token()) == std::mem::discriminant(&expected) {\n            self.advance();\n            Ok(())\n        } else {\n            Err(anyhow!(\n                \"Expected {:?}, found {:?}\",\n                expected,\n                self.current_token()\n            ))\n        }\n    }\n\n    pub fn parse(&mut self) -> Result<Expression> {\n        self.parse_expression()\n    }\n\n    fn parse_expression(&mut self) -> Result<Expression> {\n        self.parse_unary()\n    }\n\n    fn parse_unary(&mut self) -> Result<Expression> {\n        match self.current_token() {\n            Token::Star => {\n                self.advance();\n                let expr = self.parse_unary()?;\n                Ok(Expression::Deref(Box::new(expr)))\n            }\n            Token::Ampersand => {\n                self.advance();\n                let mutable = matches!(self.current_token(), Token::Mut);\n                if mutable {\n                    self.advance();\n                }\n                let expr = self.parse_unary()?;\n                Ok(Expression::AddressOf {\n                    mutable,\n                    expr: Box::new(expr),\n                })\n            }\n            _ => self.parse_postfix(),\n        }\n    }\n\n    fn parse_postfix(&mut self) -> Result<Expression> {\n        let mut expr = self.parse_primary()?;\n\n        loop {\n            match self.current_token() {\n                Token::Dot => {\n                    self.advance();\n                    if let Token::Identifier(field) = self.current_token() {\n                        let field = field.clone();\n                        self.advance();\n\n                        // Check if this is a method call\n                        if matches!(self.current_token(), Token::LeftParen) {\n                            self.advance(); // consume '('\n                            let args = self.parse_arguments()?;\n                            self.expect(Token::RightParen)?;\n                            expr = Expression::MethodCall {\n                                base: Box::new(expr),\n                                method: field,\n                                args,\n                            };\n                        } else {\n                            expr = Expression::FieldAccess {\n                                base: Box::new(expr),\n                                field,\n                            };\n                        }\n                    } else {\n                        return Err(anyhow!(\"Expected field name after '.'\"));\n                    }\n                }\n                Token::LeftBracket => {\n                    self.advance();\n                    let index = self.parse_expression()?;\n                    self.expect(Token::RightBracket)?;\n                    expr = Expression::Index {\n                        base: Box::new(expr),\n                        index: Box::new(index),\n                    };\n                }\n                _ => break,\n            }\n        }\n\n        Ok(expr)\n    }\n\n    fn parse_primary(&mut self) -> Result<Expression> {\n        match self.current_token() {\n            Token::Identifier(name) => {\n                let first_segment = name.clone();\n                self.advance();\n\n                // Check if this is a path (e.g., std::vec::Vec)\n                let mut segments = vec![first_segment.clone()];\n                while matches!(self.current_token(), Token::PathSeparator) {\n                    self.advance(); // consume '::'\n                    if let Token::Identifier(segment) = self.current_token() {\n                        segments.push(segment.clone());\n                        self.advance();\n                    } else {\n                        return Err(anyhow!(\"Expected identifier after '::'\"));\n                    }\n                }\n\n                // Check if this is a generic type (e.g., Vec<String>)\n                if matches!(self.current_token(), Token::LeftAngle) {\n                    self.advance(); // consume '<'\n                    let type_args = self.parse_type_arguments()?;\n                    self.expect(Token::RightAngle)?;\n\n                    // For generics, we use the full path as the base\n                    let base = segments.join(\"::\");\n                    return Ok(Expression::Generic {\n                        base,\n                        args: type_args,\n                    });\n                }\n\n                // Check if this is a function call\n                if matches!(self.current_token(), Token::LeftParen) {\n                    self.advance(); // consume '('\n                    let args = self.parse_arguments()?;\n                    self.expect(Token::RightParen)?;\n\n                    // For function calls, use the full path as the function name\n                    let function = segments.join(\"::\");\n                    return Ok(Expression::FunctionCall { function, args });\n                }\n\n                // Return as path if multiple segments, otherwise as variable\n                if segments.len() > 1 {\n                    Ok(Expression::Path(segments))\n                } else {\n                    Ok(Expression::Variable(first_segment))\n                }\n            }\n            Token::Number(value) => {\n                let value = *value;\n                self.advance();\n                Ok(Expression::NumberLiteral(value))\n            }\n            Token::String(value) => {\n                let value = value.clone();\n                self.advance();\n                Ok(Expression::StringLiteral(value))\n            }\n            Token::LeftParen => {\n                self.advance();\n                let expr = self.parse_expression()?;\n                self.expect(Token::RightParen)?;\n                Ok(Expression::Parenthesized(Box::new(expr)))\n            }\n            _ => Err(anyhow!(\n                \"Expected identifier, number, string, or '(', found {:?}\",\n                self.current_token()\n            )),\n        }\n    }\n\n    fn parse_arguments(&mut self) -> Result<Vec<Expression>> {\n        let mut args = Vec::new();\n\n        // Handle empty argument list\n        if matches!(self.current_token(), Token::RightParen) {\n            return Ok(args);\n        }\n\n        // Parse first argument\n        args.push(self.parse_expression()?);\n\n        // Parse remaining arguments\n        while matches!(self.current_token(), Token::Comma) {\n            self.advance(); // consume ','\n            args.push(self.parse_expression()?);\n        }\n\n        Ok(args)\n    }\n\n    fn parse_type_arguments(&mut self) -> Result<Vec<String>> {\n        let mut args = Vec::new();\n\n        // Handle empty type argument list\n        if matches!(self.current_token(), Token::RightAngle) {\n            return Ok(args);\n        }\n\n        // Parse first type argument\n        args.push(self.parse_type_name()?);\n\n        // Parse remaining type arguments\n        while matches!(self.current_token(), Token::Comma) {\n            self.advance(); // consume ','\n            args.push(self.parse_type_name()?);\n        }\n\n        Ok(args)\n    }\n\n    fn parse_type_name(&mut self) -> Result<String> {\n        let mut segments = Vec::new();\n\n        // Parse first segment\n        if let Token::Identifier(name) = self.current_token() {\n            segments.push(name.clone());\n            self.advance();\n        } else {\n            return Err(anyhow!(\"Expected type name\"));\n        }\n\n        // Parse additional path segments\n        while matches!(self.current_token(), Token::PathSeparator) {\n            self.advance(); // consume '::'\n            if let Token::Identifier(segment) = self.current_token() {\n                segments.push(segment.clone());\n                self.advance();\n            } else {\n                return Err(anyhow!(\"Expected identifier after '::'\"));\n            }\n        }\n\n        let mut type_name = segments.join(\"::\");\n\n        // Check for nested generics\n        if matches!(self.current_token(), Token::LeftAngle) {\n            self.advance(); // consume '<'\n            let nested_args = self.parse_type_arguments()?;\n            self.expect(Token::RightAngle)?;\n            type_name.push('<');\n            type_name.push_str(&nested_args.join(\", \"));\n            type_name.push('>');\n        }\n\n        Ok(type_name)\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Parser",
+            "traitName": null
+          },
+          {
+            "type": "function",
+            "name": "parse_expression",
+            "visibility": "pub",
+            "location": {
+              "startLine": 5,
+              "startColumn": 2,
+              "endLine": 5,
+              "endColumn": 2,
+              "startByte": 17815,
+              "endByte": 17976
+            },
+            "sourceCode": "/// Parse a string into an Expression\npub fn parse_expression(input: &str) -> Result<Expression> {\n    let mut parser = Parser::new(input)?;\n    parser.parse()\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": [
+              {
+                "name": "input",
+                "paramType": "&str",
+                "isSelf": false,
+                "isMutable": false
+              }
+            ],
+            "returnType": "-> Result<Expression>",
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "mod",
+            "name": "tests",
+            "visibility": "private",
+            "location": {
+              "startLine": 349,
+              "startColumn": 2,
+              "endLine": 349,
+              "endColumn": 2,
+              "startByte": 17978,
+              "endByte": 28251
+            },
+            "sourceCode": "#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[track_caller]\n    fn parse(s: &str) -> Expression {\n        match parse_expression(s) {\n            Ok(expr) => expr,\n            Err(e) => panic!(\"Failed to parse expression '{s}': {e}\"),\n        }\n    }\n\n    #[test]\n    fn test_variable() {\n        let expr = parse(\"foo\");\n        assert_eq!(expr, Expression::Variable(\"foo\".to_string()));\n    }\n\n    #[test]\n    fn test_number_literal() {\n        let expr = parse(\"42\");\n        assert_eq!(expr, Expression::NumberLiteral(42));\n\n        let expr = parse(\"0xff\");\n        assert_eq!(expr, Expression::NumberLiteral(0xff));\n    }\n\n    #[test]\n    fn test_string_literal() {\n        let expr = parse(r#\"\"hello\"\"#);\n        assert_eq!(expr, Expression::StringLiteral(\"hello\".to_string()));\n\n        let expr = parse(r#\"\"created\"\"#);\n        assert_eq!(expr, Expression::StringLiteral(\"created\".to_string()));\n    }\n\n    #[test]\n    fn test_field_access() {\n        let expr = parse(\"foo.bar\");\n        assert_eq!(\n            expr,\n            Expression::FieldAccess {\n                base: Box::new(Expression::Variable(\"foo\".to_string())),\n                field: \"bar\".to_string(),\n            }\n        );\n    }\n\n    #[test]\n    fn test_chained_field_access() {\n        let expr = parse(\"foo.bar.baz\");\n        assert_eq!(\n            expr,\n            Expression::FieldAccess {\n                base: Box::new(Expression::FieldAccess {\n                    base: Box::new(Expression::Variable(\"foo\".to_string())),\n                    field: \"bar\".to_string(),\n                }),\n                field: \"baz\".to_string(),\n            }\n        );\n    }\n\n    #[test]\n    fn test_index_access() {\n        let expr = parse(\"arr[0]\");\n        assert_eq!(\n            expr,\n            Expression::Index {\n                base: Box::new(Expression::Variable(\"arr\".to_string())),\n                index: Box::new(Expression::NumberLiteral(0)),\n            }\n        );\n\n        // Test string indexing\n        let expr = parse(r#\"map[\"key\"]\"#);\n        assert_eq!(\n            expr,\n            Expression::Index {\n                base: Box::new(Expression::Variable(\"map\".to_string())),\n                index: Box::new(Expression::StringLiteral(\"key\".to_string())),\n            }\n        );\n    }\n\n    #[test]\n    fn test_deref() {\n        let expr = parse(\"*ptr\");\n        assert_eq!(\n            expr,\n            Expression::Deref(Box::new(Expression::Variable(\"ptr\".to_string())))\n        );\n    }\n\n    #[test]\n    fn test_address_of() {\n        let expr = parse(\"&var\");\n        assert_eq!(\n            expr,\n            Expression::AddressOf {\n                mutable: false,\n                expr: Box::new(Expression::Variable(\"var\".to_string())),\n            }\n        );\n\n        let expr = parse(\"&mut var\");\n        assert_eq!(\n            expr,\n            Expression::AddressOf {\n                mutable: true,\n                expr: Box::new(Expression::Variable(\"var\".to_string())),\n            }\n        );\n    }\n\n    #[test]\n    fn test_parenthesized() {\n        let expr = parse(\"(foo)\");\n        assert_eq!(\n            expr,\n            Expression::Parenthesized(Box::new(Expression::Variable(\"foo\".to_string())))\n        );\n    }\n\n    #[test]\n    fn test_complex_expressions() {\n        // Test field access with indexing: obj.field[0]\n        let expr = parse(\"obj.field[0]\");\n        assert_eq!(\n            expr,\n            Expression::Index {\n                base: Box::new(Expression::FieldAccess {\n                    base: Box::new(Expression::Variable(\"obj\".to_string())),\n                    field: \"field\".to_string(),\n                }),\n                index: Box::new(Expression::NumberLiteral(0)),\n            }\n        );\n\n        // Test dereferencing field access: *obj.ptr\n        let expr = parse(\"*obj.ptr\");\n        assert_eq!(\n            expr,\n            Expression::Deref(Box::new(Expression::FieldAccess {\n                base: Box::new(Expression::Variable(\"obj\".to_string())),\n                field: \"ptr\".to_string(),\n            }))\n        );\n    }\n\n    #[test]\n    fn test_display_formatting() {\n        assert_eq!(parse(\"foo\").to_string(), \"foo\");\n        assert_eq!(parse(\"42\").to_string(), \"42\");\n        assert_eq!(parse(r#\"\"hello\"\"#).to_string(), r#\"\"hello\"\"#);\n        assert_eq!(parse(\"foo.bar\").to_string(), \"foo.bar\");\n        assert_eq!(parse(\"arr[0]\").to_string(), \"arr[0]\");\n        assert_eq!(parse(r#\"map[\"key\"]\"#).to_string(), r#\"map[\"key\"]\"#);\n        assert_eq!(parse(\"*ptr\").to_string(), \"*ptr\");\n        assert_eq!(parse(\"&var\").to_string(), \"&var\");\n        assert_eq!(parse(\"&mut var\").to_string(), \"&mut var\");\n        assert_eq!(parse(\"(foo)\").to_string(), \"(foo)\");\n    }\n\n    #[test]\n    fn test_method_call() {\n        // No arguments\n        let expr = parse(\"vec.len()\");\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::Variable(\"vec\".to_string())),\n                method: \"len\".to_string(),\n                args: vec![],\n            }\n        );\n\n        // With arguments\n        let expr = parse(\"vec.push(42)\");\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::Variable(\"vec\".to_string())),\n                method: \"push\".to_string(),\n                args: vec![Expression::NumberLiteral(42)],\n            }\n        );\n\n        // Multiple arguments\n        let expr = parse(r#\"map.insert(\"key\", 42)\"#);\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::Variable(\"map\".to_string())),\n                method: \"insert\".to_string(),\n                args: vec![\n                    Expression::StringLiteral(\"key\".to_string()),\n                    Expression::NumberLiteral(42)\n                ],\n            }\n        );\n\n        // Chained method calls\n        let expr = parse(\"vec.iter().count()\");\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::MethodCall {\n                    base: Box::new(Expression::Variable(\"vec\".to_string())),\n                    method: \"iter\".to_string(),\n                    args: vec![],\n                }),\n                method: \"count\".to_string(),\n                args: vec![],\n            }\n        );\n    }\n\n    #[test]\n    fn test_function_call() {\n        // No arguments\n        let expr = parse(\"foo()\");\n        assert_eq!(\n            expr,\n            Expression::FunctionCall {\n                function: \"foo\".to_string(),\n                args: vec![],\n            }\n        );\n\n        // With arguments\n        let expr = parse(\"bar(1, 2)\");\n        assert_eq!(\n            expr,\n            Expression::FunctionCall {\n                function: \"bar\".to_string(),\n                args: vec![Expression::NumberLiteral(1), Expression::NumberLiteral(2)],\n            }\n        );\n    }\n\n    #[test]\n    fn test_path_expressions() {\n        // Simple path\n        let expr = parse(\"std::vec::Vec\");\n        assert_eq!(\n            expr,\n            Expression::Path(vec![\n                \"std\".to_string(),\n                \"vec\".to_string(),\n                \"Vec\".to_string()\n            ])\n        );\n\n        // Path function call\n        let expr = parse(\"lldb_demo::User::new(1, \\\"foo\\\", \\\"bar\\\")\");\n        assert_eq!(\n            expr,\n            Expression::FunctionCall {\n                function: \"lldb_demo::User::new\".to_string(),\n                args: vec![\n                    Expression::NumberLiteral(1),\n                    Expression::StringLiteral(\"foo\".to_string()),\n                    Expression::StringLiteral(\"bar\".to_string())\n                ],\n            }\n        );\n    }\n\n    #[test]\n    fn test_generic_types() {\n        // Simple generic\n        let expr = parse(\"Vec<u64>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"Vec\".to_string(),\n                args: vec![\"u64\".to_string()],\n            }\n        );\n\n        // Generic with multiple type arguments\n        let expr = parse(\"HashMap<String, u32>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"HashMap\".to_string(),\n                args: vec![\"String\".to_string(), \"u32\".to_string()],\n            }\n        );\n\n        // Nested generics\n        let expr = parse(\"Vec<Option<String>>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"Vec\".to_string(),\n                args: vec![\"Option<String>\".to_string()],\n            }\n        );\n\n        // Path with generics\n        let expr = parse(\"std::collections::HashMap<String, u32>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"std::collections::HashMap\".to_string(),\n                args: vec![\"String\".to_string(), \"u32\".to_string()],\n            }\n        );\n    }\n\n    #[test]\n    fn test_method_call_display() {\n        assert_eq!(parse(\"vec.len()\").to_string(), \"vec.len()\");\n        assert_eq!(parse(\"vec.push(42)\").to_string(), \"vec.push(42)\");\n        assert_eq!(\n            parse(r#\"map.insert(\"key\", 42)\"#).to_string(),\n            r#\"map.insert(\"key\", 42)\"#\n        );\n        assert_eq!(parse(\"foo()\").to_string(), \"foo()\");\n        assert_eq!(parse(\"bar(1, 2)\").to_string(), \"bar(1, 2)\");\n    }\n\n    #[test]\n    fn test_path_and_generic_display() {\n        // Path expressions\n        assert_eq!(parse(\"std::vec::Vec\").to_string(), \"std::vec::Vec\");\n        assert_eq!(\n            parse(\"lldb_demo::User::new(1, \\\"foo\\\", \\\"bar\\\")\").to_string(),\n            r#\"lldb_demo::User::new(1, \"foo\", \"bar\")\"#\n        );\n\n        // Generic expressions\n        assert_eq!(parse(\"Vec<u64>\").to_string(), \"Vec<u64>\");\n        assert_eq!(\n            parse(\"HashMap<String, u32>\").to_string(),\n            \"HashMap<String, u32>\"\n        );\n        assert_eq!(\n            parse(\"Vec<Option<String>>\").to_string(),\n            \"Vec<Option<String>>\"\n        );\n        assert_eq!(\n            parse(\"std::collections::HashMap<String, u32>\").to_string(),\n            \"std::collections::HashMap<String, u32>\"\n        );\n    }\n}",
+            "attributes": [
+              "#[cfg(test)]"
+            ],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          }
+        ],
+        "location": {
+          "startLine": 1,
+          "startColumn": 1,
+          "endLine": 934,
+          "endColumn": 1,
+          "startByte": 0,
+          "endByte": 28252
+        }
+      }
+    ],
+    "rootModule": {
+      "name": "main",
+      "path": "main.rs",
+      "items": [
+        {
+          "type": "use",
+          "name": "std::fmt",
+          "visibility": "private",
+          "location": {
+            "startLine": 1,
+            "startColumn": 14,
+            "endLine": 1,
+            "endColumn": 14,
+            "startByte": 240,
+            "endByte": 253
+          },
+          "sourceCode": "use std::fmt;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "use",
+          "name": "anyhow::{Result, anyhow}",
+          "visibility": "private",
+          "location": {
+            "startLine": 1,
+            "startColumn": 30,
+            "endLine": 1,
+            "endColumn": 30,
+            "startByte": 255,
+            "endByte": 284
+          },
+          "sourceCode": "use anyhow::{Result, anyhow};",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "use",
+          "name": "itertools::Itertools",
+          "visibility": "private",
+          "location": {
+            "startLine": 1,
+            "startColumn": 26,
+            "endLine": 1,
+            "endColumn": 26,
+            "startByte": 285,
+            "endByte": 310
+          },
+          "sourceCode": "use itertools::Itertools;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "enum",
+          "name": "Expression",
+          "visibility": "pub",
+          "location": {
+            "startLine": 10,
+            "startColumn": 59,
+            "endLine": 55,
+            "endColumn": 2,
+            "startByte": 312,
+            "endByte": 1715
+          },
+          "sourceCode": "/// Represents a parsed expression\n#[derive(Debug, Clone, PartialEq)]\npub enum Expression {\n    /// Simple variable reference (e.g., `foo`)\n    Variable(String),\n\n    /// Path expression (e.g., `std::vec::Vec`, `lldb_demo::User`)\n    Path(Vec<String>),\n\n    /// Generic type (e.g., `Vec<String>`, `HashMap<String, u32>`)\n    Generic { base: String, args: Vec<String> },\n\n    /// Field access (e.g., `foo.bar`, `self.field`)\n    FieldAccess {\n        base: Box<Expression>,\n        field: String,\n    },\n\n    /// Array/slice indexing (e.g., `arr[5]`, `slice[idx]`)\n    Index {\n        base: Box<Expression>,\n        index: Box<Expression>,\n    },\n\n    /// Pointer dereferencing (e.g., `*ptr`, `**ptr_ptr`)\n    Deref(Box<Expression>),\n\n    /// Address-of operator (e.g., `&var`, `&mut var`)\n    AddressOf {\n        mutable: bool,\n        expr: Box<Expression>,\n    },\n\n    /// Literal number (e.g., `42`, `0xff`)\n    NumberLiteral(u64),\n\n    /// String literal (e.g., `\"hello\"`, `\"created\"`)\n    StringLiteral(String),\n\n    /// Parenthesized expression (e.g., `(foo)`)\n    Parenthesized(Box<Expression>),\n\n    /// Method call (e.g., `foo.bar()`, `vec.len()`)\n    MethodCall {\n        base: Box<Expression>,\n        method: String,\n        args: Vec<Expression>,\n    },\n\n    /// Function call (e.g., `foo()`, `bar(1, 2)`)\n    FunctionCall {\n        function: String,\n        args: Vec<Expression>,\n    },\n}",
+          "attributes": [
+            "#[derive(Debug, Clone, PartialEq)]"
+          ],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": [
+            {
+              "name": "Variable",
+              "discriminant": null
+            },
+            {
+              "name": "Path",
+              "discriminant": null
+            },
+            {
+              "name": "Generic",
+              "discriminant": null
+            },
+            {
+              "name": "FieldAccess",
+              "discriminant": null
+            },
+            {
+              "name": "Index",
+              "discriminant": null
+            },
+            {
+              "name": "Deref",
+              "discriminant": null
+            },
+            {
+              "name": "AddressOf",
+              "discriminant": null
+            },
+            {
+              "name": "NumberLiteral",
+              "discriminant": null
+            },
+            {
+              "name": "StringLiteral",
+              "discriminant": null
+            },
+            {
+              "name": "Parenthesized",
+              "discriminant": null
+            },
+            {
+              "name": "MethodCall",
+              "discriminant": null
+            },
+            {
+              "name": "FunctionCall",
+              "discriminant": null
+            }
+          ],
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "fmt::Display for Expression",
+          "visibility": "private",
+          "location": {
+            "startLine": 28,
+            "startColumn": 2,
+            "endLine": 28,
+            "endColumn": 2,
+            "startByte": 1717,
+            "endByte": 3051
+          },
+          "sourceCode": "impl fmt::Display for Expression {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            Expression::Variable(name) => write!(f, \"{name}\"),\n            Expression::Path(segments) => write!(f, \"{}\", segments.join(\"::\")),\n            Expression::Generic { base, args } => write!(f, \"{}<{}>\", base, args.join(\", \")),\n            Expression::FieldAccess { base, field } => write!(f, \"{base}.{field}\"),\n            Expression::Index { base, index } => write!(f, \"{base}[{index}]\"),\n            Expression::Deref(expr) => write!(f, \"*{expr}\"),\n            Expression::AddressOf { mutable, expr } => {\n                if *mutable {\n                    write!(f, \"&mut {expr}\")\n                } else {\n                    write!(f, \"&{expr}\")\n                }\n            }\n            Expression::NumberLiteral(value) => write!(f, \"{value}\"),\n            Expression::StringLiteral(value) => write!(f, \"\\\"{value}\\\"\"),\n            Expression::Parenthesized(expr) => write!(f, \"({expr})\"),\n            Expression::MethodCall { base, method, args } => {\n                write!(f, \"{base}.{method}({})\", args.iter().join(\", \"))\n            }\n            Expression::FunctionCall { function, args } => {\n                write!(f, \"{function}({})\", args.iter().join(\", \"))\n            }\n        }\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Expression",
+          "traitName": "fmt::Display"
+        },
+        {
+          "type": "enum",
+          "name": "Token",
+          "visibility": "private",
+          "location": {
+            "startLine": 28,
+            "startColumn": 2,
+            "endLine": 28,
+            "endColumn": 2,
+            "startByte": 3053,
+            "endByte": 3476
+          },
+          "sourceCode": "/// Simple tokenizer for expressions\n#[derive(Debug, Clone, PartialEq)]\nenum Token {\n    Identifier(String),\n    Number(u64),\n    String(String),\n    Dot,\n    Star,\n    Ampersand,\n    /// '['\n    LeftBracket,\n    /// ']'\n    RightBracket,\n    /// '('\n    LeftParen,\n    /// ')'\n    RightParen,\n    /// '<'\n    LeftAngle,\n    /// '>'\n    RightAngle,\n    /// '::'\n    PathSeparator,\n    /// ','\n    Comma,\n    Mut,\n    Eof,\n}",
+          "attributes": [
+            "#[derive(Debug, Clone, PartialEq)]"
+          ],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": [
+            {
+              "name": "Identifier",
+              "discriminant": null
+            },
+            {
+              "name": "Number",
+              "discriminant": null
+            },
+            {
+              "name": "String",
+              "discriminant": null
+            },
+            {
+              "name": "Dot",
+              "discriminant": null
+            },
+            {
+              "name": "Star",
+              "discriminant": null
+            },
+            {
+              "name": "Ampersand",
+              "discriminant": null
+            },
+            {
+              "name": "LeftBracket",
+              "discriminant": null
+            },
+            {
+              "name": "RightBracket",
+              "discriminant": null
+            },
+            {
+              "name": "LeftParen",
+              "discriminant": null
+            },
+            {
+              "name": "RightParen",
+              "discriminant": null
+            },
+            {
+              "name": "LeftAngle",
+              "discriminant": null
+            },
+            {
+              "name": "RightAngle",
+              "discriminant": null
+            },
+            {
+              "name": "PathSeparator",
+              "discriminant": null
+            },
+            {
+              "name": "Comma",
+              "discriminant": null
+            },
+            {
+              "name": "Mut",
+              "discriminant": null
+            },
+            {
+              "name": "Eof",
+              "discriminant": null
+            }
+          ],
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "struct",
+          "name": "Tokenizer",
+          "visibility": "private",
+          "location": {
+            "startLine": 4,
+            "startColumn": 2,
+            "endLine": 4,
+            "endColumn": 2,
+            "startByte": 3478,
+            "endByte": 3543
+          },
+          "sourceCode": "struct Tokenizer<'a> {\n    input: &'a str,\n    position: usize,\n}",
+          "attributes": [],
+          "genericParameters": [
+            "'a"
+          ],
+          "parameters": null,
+          "returnType": null,
+          "fields": [
+            {
+              "name": "input",
+              "fieldType": "&'a str",
+              "visibility": "private"
+            },
+            {
+              "name": "position",
+              "fieldType": "usize",
+              "visibility": "private"
+            }
+          ],
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "Tokenizer<'a>",
+          "visibility": "private",
+          "location": {
+            "startLine": 119,
+            "startColumn": 40,
+            "endLine": 169,
+            "endColumn": 2,
+            "startByte": 3545,
+            "endByte": 8648
+          },
+          "sourceCode": "impl<'a> Tokenizer<'a> {\n    fn new(input: &'a str) -> Self {\n        Self { input, position: 0 }\n    }\n\n    fn current_char(&self) -> Option<char> {\n        self.input.chars().nth(self.position)\n    }\n\n    fn advance(&mut self) {\n        if self.position < self.input.len() {\n            self.position += 1;\n        }\n    }\n\n    fn skip_whitespace(&mut self) {\n        while let Some(ch) = self.current_char() {\n            if ch.is_whitespace() {\n                self.advance();\n            } else {\n                break;\n            }\n        }\n    }\n\n    fn read_identifier(&mut self) -> String {\n        let start = self.position;\n        while let Some(ch) = self.current_char() {\n            if ch.is_ascii_alphanumeric() || ch == '_' {\n                self.advance();\n            } else {\n                break;\n            }\n        }\n        self.input[start..self.position].to_string()\n    }\n\n    fn read_number(&mut self) -> Result<u64> {\n        let start = self.position;\n\n        // Check for hex prefix\n        if self.input[self.position..].starts_with(\"0x\")\n            || self.input[self.position..].starts_with(\"0X\")\n        {\n            self.advance(); // skip '0'\n            self.advance(); // skip 'x'\n            while let Some(ch) = self.current_char() {\n                if ch.is_ascii_hexdigit() {\n                    self.advance();\n                } else {\n                    break;\n                }\n            }\n            let hex_str = &self.input[start + 2..self.position];\n            u64::from_str_radix(hex_str, 16).map_err(|e| anyhow!(\"Invalid hex number: {}\", e))\n        } else {\n            // Regular decimal number\n            while let Some(ch) = self.current_char() {\n                if ch.is_ascii_digit() {\n                    self.advance();\n                } else {\n                    break;\n                }\n            }\n            self.input[start..self.position]\n                .parse()\n                .map_err(|e| anyhow!(\"Invalid number: {}\", e))\n        }\n    }\n\n    fn read_string(&mut self) -> Result<String> {\n        // Skip opening quote\n        self.advance();\n        let start = self.position;\n\n        while let Some(ch) = self.current_char() {\n            if ch == '\"' {\n                // Found closing quote\n                let content = self.input[start..self.position].to_string();\n                self.advance(); // Skip closing quote\n                return Ok(content);\n            } else if ch == '\\\\' {\n                // Handle escape sequences (basic support)\n                self.advance(); // Skip backslash\n                if self.current_char().is_some() {\n                    self.advance(); // Skip escaped character\n                }\n            } else {\n                self.advance();\n            }\n        }\n\n        Err(anyhow!(\"Unterminated string literal\"))\n    }\n\n    fn next_token(&mut self) -> Result<Token> {\n        self.skip_whitespace();\n\n        match self.current_char() {\n            None => Ok(Token::Eof),\n            Some('.') => {\n                self.advance();\n                Ok(Token::Dot)\n            }\n            Some('*') => {\n                self.advance();\n                Ok(Token::Star)\n            }\n            Some('&') => {\n                self.advance();\n                Ok(Token::Ampersand)\n            }\n            Some('[') => {\n                self.advance();\n                Ok(Token::LeftBracket)\n            }\n            Some(']') => {\n                self.advance();\n                Ok(Token::RightBracket)\n            }\n            Some('(') => {\n                self.advance();\n                Ok(Token::LeftParen)\n            }\n            Some(')') => {\n                self.advance();\n                Ok(Token::RightParen)\n            }\n            Some('<') => {\n                self.advance();\n                Ok(Token::LeftAngle)\n            }\n            Some('>') => {\n                self.advance();\n                Ok(Token::RightAngle)\n            }\n            Some(':') => {\n                self.advance();\n                if self.current_char() == Some(':') {\n                    self.advance();\n                    Ok(Token::PathSeparator)\n                } else {\n                    Err(anyhow!(\"Expected '::' but found single ':'\"))\n                }\n            }\n            Some(',') => {\n                self.advance();\n                Ok(Token::Comma)\n            }\n            Some(ch) if ch.is_ascii_alphabetic() || ch == '_' => {\n                let ident = self.read_identifier();\n                if ident == \"mut\" {\n                    Ok(Token::Mut)\n                } else {\n                    Ok(Token::Identifier(ident))\n                }\n            }\n            Some(ch) if ch.is_ascii_digit() => {\n                let number = self.read_number()?;\n                Ok(Token::Number(number))\n            }\n            Some('\"') => {\n                let string = self.read_string()?;\n                Ok(Token::String(string))\n            }\n            Some(ch) => Err(anyhow!(\"Unexpected character: '{}'\", ch)),\n        }\n    }\n}",
+          "attributes": [],
+          "genericParameters": [
+            "'a"
+          ],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Tokenizer<'a>",
+          "traitName": null
+        },
+        {
+          "type": "struct",
+          "name": "Parser",
+          "visibility": "private",
+          "location": {
+            "startLine": 5,
+            "startColumn": 2,
+            "endLine": 5,
+            "endColumn": 2,
+            "startByte": 8650,
+            "endByte": 8748
+          },
+          "sourceCode": "/// Simple recursive descent parser\nstruct Parser {\n    tokens: Vec<Token>,\n    position: usize,\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": [
+            {
+              "name": "tokens",
+              "fieldType": "Vec<Token>",
+              "visibility": "private"
+            },
+            {
+              "name": "position",
+              "fieldType": "usize",
+              "visibility": "private"
+            }
+          ],
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "Parser",
+          "visibility": "private",
+          "location": {
+            "startLine": 260,
+            "startColumn": 61,
+            "endLine": 271,
+            "endColumn": 2,
+            "startByte": 8750,
+            "endByte": 17813
+          },
+          "sourceCode": "impl Parser {\n    fn new(input: &str) -> Result<Self> {\n        let mut tokenizer = Tokenizer::new(input);\n        let mut tokens = Vec::new();\n\n        loop {\n            let token = tokenizer.next_token()?;\n            let is_eof = token == Token::Eof;\n            tokens.push(token);\n            if is_eof {\n                break;\n            }\n        }\n\n        Ok(Self {\n            tokens,\n            position: 0,\n        })\n    }\n\n    fn current_token(&self) -> &Token {\n        self.tokens.get(self.position).unwrap_or(&Token::Eof)\n    }\n\n    fn advance(&mut self) {\n        if self.position < self.tokens.len() {\n            self.position += 1;\n        }\n    }\n\n    fn expect(&mut self, expected: Token) -> Result<()> {\n        if std::mem::discriminant(self.current_token()) == std::mem::discriminant(&expected) {\n            self.advance();\n            Ok(())\n        } else {\n            Err(anyhow!(\n                \"Expected {:?}, found {:?}\",\n                expected,\n                self.current_token()\n            ))\n        }\n    }\n\n    pub fn parse(&mut self) -> Result<Expression> {\n        self.parse_expression()\n    }\n\n    fn parse_expression(&mut self) -> Result<Expression> {\n        self.parse_unary()\n    }\n\n    fn parse_unary(&mut self) -> Result<Expression> {\n        match self.current_token() {\n            Token::Star => {\n                self.advance();\n                let expr = self.parse_unary()?;\n                Ok(Expression::Deref(Box::new(expr)))\n            }\n            Token::Ampersand => {\n                self.advance();\n                let mutable = matches!(self.current_token(), Token::Mut);\n                if mutable {\n                    self.advance();\n                }\n                let expr = self.parse_unary()?;\n                Ok(Expression::AddressOf {\n                    mutable,\n                    expr: Box::new(expr),\n                })\n            }\n            _ => self.parse_postfix(),\n        }\n    }\n\n    fn parse_postfix(&mut self) -> Result<Expression> {\n        let mut expr = self.parse_primary()?;\n\n        loop {\n            match self.current_token() {\n                Token::Dot => {\n                    self.advance();\n                    if let Token::Identifier(field) = self.current_token() {\n                        let field = field.clone();\n                        self.advance();\n\n                        // Check if this is a method call\n                        if matches!(self.current_token(), Token::LeftParen) {\n                            self.advance(); // consume '('\n                            let args = self.parse_arguments()?;\n                            self.expect(Token::RightParen)?;\n                            expr = Expression::MethodCall {\n                                base: Box::new(expr),\n                                method: field,\n                                args,\n                            };\n                        } else {\n                            expr = Expression::FieldAccess {\n                                base: Box::new(expr),\n                                field,\n                            };\n                        }\n                    } else {\n                        return Err(anyhow!(\"Expected field name after '.'\"));\n                    }\n                }\n                Token::LeftBracket => {\n                    self.advance();\n                    let index = self.parse_expression()?;\n                    self.expect(Token::RightBracket)?;\n                    expr = Expression::Index {\n                        base: Box::new(expr),\n                        index: Box::new(index),\n                    };\n                }\n                _ => break,\n            }\n        }\n\n        Ok(expr)\n    }\n\n    fn parse_primary(&mut self) -> Result<Expression> {\n        match self.current_token() {\n            Token::Identifier(name) => {\n                let first_segment = name.clone();\n                self.advance();\n\n                // Check if this is a path (e.g., std::vec::Vec)\n                let mut segments = vec![first_segment.clone()];\n                while matches!(self.current_token(), Token::PathSeparator) {\n                    self.advance(); // consume '::'\n                    if let Token::Identifier(segment) = self.current_token() {\n                        segments.push(segment.clone());\n                        self.advance();\n                    } else {\n                        return Err(anyhow!(\"Expected identifier after '::'\"));\n                    }\n                }\n\n                // Check if this is a generic type (e.g., Vec<String>)\n                if matches!(self.current_token(), Token::LeftAngle) {\n                    self.advance(); // consume '<'\n                    let type_args = self.parse_type_arguments()?;\n                    self.expect(Token::RightAngle)?;\n\n                    // For generics, we use the full path as the base\n                    let base = segments.join(\"::\");\n                    return Ok(Expression::Generic {\n                        base,\n                        args: type_args,\n                    });\n                }\n\n                // Check if this is a function call\n                if matches!(self.current_token(), Token::LeftParen) {\n                    self.advance(); // consume '('\n                    let args = self.parse_arguments()?;\n                    self.expect(Token::RightParen)?;\n\n                    // For function calls, use the full path as the function name\n                    let function = segments.join(\"::\");\n                    return Ok(Expression::FunctionCall { function, args });\n                }\n\n                // Return as path if multiple segments, otherwise as variable\n                if segments.len() > 1 {\n                    Ok(Expression::Path(segments))\n                } else {\n                    Ok(Expression::Variable(first_segment))\n                }\n            }\n            Token::Number(value) => {\n                let value = *value;\n                self.advance();\n                Ok(Expression::NumberLiteral(value))\n            }\n            Token::String(value) => {\n                let value = value.clone();\n                self.advance();\n                Ok(Expression::StringLiteral(value))\n            }\n            Token::LeftParen => {\n                self.advance();\n                let expr = self.parse_expression()?;\n                self.expect(Token::RightParen)?;\n                Ok(Expression::Parenthesized(Box::new(expr)))\n            }\n            _ => Err(anyhow!(\n                \"Expected identifier, number, string, or '(', found {:?}\",\n                self.current_token()\n            )),\n        }\n    }\n\n    fn parse_arguments(&mut self) -> Result<Vec<Expression>> {\n        let mut args = Vec::new();\n\n        // Handle empty argument list\n        if matches!(self.current_token(), Token::RightParen) {\n            return Ok(args);\n        }\n\n        // Parse first argument\n        args.push(self.parse_expression()?);\n\n        // Parse remaining arguments\n        while matches!(self.current_token(), Token::Comma) {\n            self.advance(); // consume ','\n            args.push(self.parse_expression()?);\n        }\n\n        Ok(args)\n    }\n\n    fn parse_type_arguments(&mut self) -> Result<Vec<String>> {\n        let mut args = Vec::new();\n\n        // Handle empty type argument list\n        if matches!(self.current_token(), Token::RightAngle) {\n            return Ok(args);\n        }\n\n        // Parse first type argument\n        args.push(self.parse_type_name()?);\n\n        // Parse remaining type arguments\n        while matches!(self.current_token(), Token::Comma) {\n            self.advance(); // consume ','\n            args.push(self.parse_type_name()?);\n        }\n\n        Ok(args)\n    }\n\n    fn parse_type_name(&mut self) -> Result<String> {\n        let mut segments = Vec::new();\n\n        // Parse first segment\n        if let Token::Identifier(name) = self.current_token() {\n            segments.push(name.clone());\n            self.advance();\n        } else {\n            return Err(anyhow!(\"Expected type name\"));\n        }\n\n        // Parse additional path segments\n        while matches!(self.current_token(), Token::PathSeparator) {\n            self.advance(); // consume '::'\n            if let Token::Identifier(segment) = self.current_token() {\n                segments.push(segment.clone());\n                self.advance();\n            } else {\n                return Err(anyhow!(\"Expected identifier after '::'\"));\n            }\n        }\n\n        let mut type_name = segments.join(\"::\");\n\n        // Check for nested generics\n        if matches!(self.current_token(), Token::LeftAngle) {\n            self.advance(); // consume '<'\n            let nested_args = self.parse_type_arguments()?;\n            self.expect(Token::RightAngle)?;\n            type_name.push('<');\n            type_name.push_str(&nested_args.join(\", \"));\n            type_name.push('>');\n        }\n\n        Ok(type_name)\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Parser",
+          "traitName": null
+        },
+        {
+          "type": "function",
+          "name": "parse_expression",
+          "visibility": "pub",
+          "location": {
+            "startLine": 5,
+            "startColumn": 2,
+            "endLine": 5,
+            "endColumn": 2,
+            "startByte": 17815,
+            "endByte": 17976
+          },
+          "sourceCode": "/// Parse a string into an Expression\npub fn parse_expression(input: &str) -> Result<Expression> {\n    let mut parser = Parser::new(input)?;\n    parser.parse()\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": [
+            {
+              "name": "input",
+              "paramType": "&str",
+              "isSelf": false,
+              "isMutable": false
+            }
+          ],
+          "returnType": "-> Result<Expression>",
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "mod",
+          "name": "tests",
+          "visibility": "private",
+          "location": {
+            "startLine": 349,
+            "startColumn": 2,
+            "endLine": 349,
+            "endColumn": 2,
+            "startByte": 17978,
+            "endByte": 28251
+          },
+          "sourceCode": "#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[track_caller]\n    fn parse(s: &str) -> Expression {\n        match parse_expression(s) {\n            Ok(expr) => expr,\n            Err(e) => panic!(\"Failed to parse expression '{s}': {e}\"),\n        }\n    }\n\n    #[test]\n    fn test_variable() {\n        let expr = parse(\"foo\");\n        assert_eq!(expr, Expression::Variable(\"foo\".to_string()));\n    }\n\n    #[test]\n    fn test_number_literal() {\n        let expr = parse(\"42\");\n        assert_eq!(expr, Expression::NumberLiteral(42));\n\n        let expr = parse(\"0xff\");\n        assert_eq!(expr, Expression::NumberLiteral(0xff));\n    }\n\n    #[test]\n    fn test_string_literal() {\n        let expr = parse(r#\"\"hello\"\"#);\n        assert_eq!(expr, Expression::StringLiteral(\"hello\".to_string()));\n\n        let expr = parse(r#\"\"created\"\"#);\n        assert_eq!(expr, Expression::StringLiteral(\"created\".to_string()));\n    }\n\n    #[test]\n    fn test_field_access() {\n        let expr = parse(\"foo.bar\");\n        assert_eq!(\n            expr,\n            Expression::FieldAccess {\n                base: Box::new(Expression::Variable(\"foo\".to_string())),\n                field: \"bar\".to_string(),\n            }\n        );\n    }\n\n    #[test]\n    fn test_chained_field_access() {\n        let expr = parse(\"foo.bar.baz\");\n        assert_eq!(\n            expr,\n            Expression::FieldAccess {\n                base: Box::new(Expression::FieldAccess {\n                    base: Box::new(Expression::Variable(\"foo\".to_string())),\n                    field: \"bar\".to_string(),\n                }),\n                field: \"baz\".to_string(),\n            }\n        );\n    }\n\n    #[test]\n    fn test_index_access() {\n        let expr = parse(\"arr[0]\");\n        assert_eq!(\n            expr,\n            Expression::Index {\n                base: Box::new(Expression::Variable(\"arr\".to_string())),\n                index: Box::new(Expression::NumberLiteral(0)),\n            }\n        );\n\n        // Test string indexing\n        let expr = parse(r#\"map[\"key\"]\"#);\n        assert_eq!(\n            expr,\n            Expression::Index {\n                base: Box::new(Expression::Variable(\"map\".to_string())),\n                index: Box::new(Expression::StringLiteral(\"key\".to_string())),\n            }\n        );\n    }\n\n    #[test]\n    fn test_deref() {\n        let expr = parse(\"*ptr\");\n        assert_eq!(\n            expr,\n            Expression::Deref(Box::new(Expression::Variable(\"ptr\".to_string())))\n        );\n    }\n\n    #[test]\n    fn test_address_of() {\n        let expr = parse(\"&var\");\n        assert_eq!(\n            expr,\n            Expression::AddressOf {\n                mutable: false,\n                expr: Box::new(Expression::Variable(\"var\".to_string())),\n            }\n        );\n\n        let expr = parse(\"&mut var\");\n        assert_eq!(\n            expr,\n            Expression::AddressOf {\n                mutable: true,\n                expr: Box::new(Expression::Variable(\"var\".to_string())),\n            }\n        );\n    }\n\n    #[test]\n    fn test_parenthesized() {\n        let expr = parse(\"(foo)\");\n        assert_eq!(\n            expr,\n            Expression::Parenthesized(Box::new(Expression::Variable(\"foo\".to_string())))\n        );\n    }\n\n    #[test]\n    fn test_complex_expressions() {\n        // Test field access with indexing: obj.field[0]\n        let expr = parse(\"obj.field[0]\");\n        assert_eq!(\n            expr,\n            Expression::Index {\n                base: Box::new(Expression::FieldAccess {\n                    base: Box::new(Expression::Variable(\"obj\".to_string())),\n                    field: \"field\".to_string(),\n                }),\n                index: Box::new(Expression::NumberLiteral(0)),\n            }\n        );\n\n        // Test dereferencing field access: *obj.ptr\n        let expr = parse(\"*obj.ptr\");\n        assert_eq!(\n            expr,\n            Expression::Deref(Box::new(Expression::FieldAccess {\n                base: Box::new(Expression::Variable(\"obj\".to_string())),\n                field: \"ptr\".to_string(),\n            }))\n        );\n    }\n\n    #[test]\n    fn test_display_formatting() {\n        assert_eq!(parse(\"foo\").to_string(), \"foo\");\n        assert_eq!(parse(\"42\").to_string(), \"42\");\n        assert_eq!(parse(r#\"\"hello\"\"#).to_string(), r#\"\"hello\"\"#);\n        assert_eq!(parse(\"foo.bar\").to_string(), \"foo.bar\");\n        assert_eq!(parse(\"arr[0]\").to_string(), \"arr[0]\");\n        assert_eq!(parse(r#\"map[\"key\"]\"#).to_string(), r#\"map[\"key\"]\"#);\n        assert_eq!(parse(\"*ptr\").to_string(), \"*ptr\");\n        assert_eq!(parse(\"&var\").to_string(), \"&var\");\n        assert_eq!(parse(\"&mut var\").to_string(), \"&mut var\");\n        assert_eq!(parse(\"(foo)\").to_string(), \"(foo)\");\n    }\n\n    #[test]\n    fn test_method_call() {\n        // No arguments\n        let expr = parse(\"vec.len()\");\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::Variable(\"vec\".to_string())),\n                method: \"len\".to_string(),\n                args: vec![],\n            }\n        );\n\n        // With arguments\n        let expr = parse(\"vec.push(42)\");\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::Variable(\"vec\".to_string())),\n                method: \"push\".to_string(),\n                args: vec![Expression::NumberLiteral(42)],\n            }\n        );\n\n        // Multiple arguments\n        let expr = parse(r#\"map.insert(\"key\", 42)\"#);\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::Variable(\"map\".to_string())),\n                method: \"insert\".to_string(),\n                args: vec![\n                    Expression::StringLiteral(\"key\".to_string()),\n                    Expression::NumberLiteral(42)\n                ],\n            }\n        );\n\n        // Chained method calls\n        let expr = parse(\"vec.iter().count()\");\n        assert_eq!(\n            expr,\n            Expression::MethodCall {\n                base: Box::new(Expression::MethodCall {\n                    base: Box::new(Expression::Variable(\"vec\".to_string())),\n                    method: \"iter\".to_string(),\n                    args: vec![],\n                }),\n                method: \"count\".to_string(),\n                args: vec![],\n            }\n        );\n    }\n\n    #[test]\n    fn test_function_call() {\n        // No arguments\n        let expr = parse(\"foo()\");\n        assert_eq!(\n            expr,\n            Expression::FunctionCall {\n                function: \"foo\".to_string(),\n                args: vec![],\n            }\n        );\n\n        // With arguments\n        let expr = parse(\"bar(1, 2)\");\n        assert_eq!(\n            expr,\n            Expression::FunctionCall {\n                function: \"bar\".to_string(),\n                args: vec![Expression::NumberLiteral(1), Expression::NumberLiteral(2)],\n            }\n        );\n    }\n\n    #[test]\n    fn test_path_expressions() {\n        // Simple path\n        let expr = parse(\"std::vec::Vec\");\n        assert_eq!(\n            expr,\n            Expression::Path(vec![\n                \"std\".to_string(),\n                \"vec\".to_string(),\n                \"Vec\".to_string()\n            ])\n        );\n\n        // Path function call\n        let expr = parse(\"lldb_demo::User::new(1, \\\"foo\\\", \\\"bar\\\")\");\n        assert_eq!(\n            expr,\n            Expression::FunctionCall {\n                function: \"lldb_demo::User::new\".to_string(),\n                args: vec![\n                    Expression::NumberLiteral(1),\n                    Expression::StringLiteral(\"foo\".to_string()),\n                    Expression::StringLiteral(\"bar\".to_string())\n                ],\n            }\n        );\n    }\n\n    #[test]\n    fn test_generic_types() {\n        // Simple generic\n        let expr = parse(\"Vec<u64>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"Vec\".to_string(),\n                args: vec![\"u64\".to_string()],\n            }\n        );\n\n        // Generic with multiple type arguments\n        let expr = parse(\"HashMap<String, u32>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"HashMap\".to_string(),\n                args: vec![\"String\".to_string(), \"u32\".to_string()],\n            }\n        );\n\n        // Nested generics\n        let expr = parse(\"Vec<Option<String>>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"Vec\".to_string(),\n                args: vec![\"Option<String>\".to_string()],\n            }\n        );\n\n        // Path with generics\n        let expr = parse(\"std::collections::HashMap<String, u32>\");\n        assert_eq!(\n            expr,\n            Expression::Generic {\n                base: \"std::collections::HashMap\".to_string(),\n                args: vec![\"String\".to_string(), \"u32\".to_string()],\n            }\n        );\n    }\n\n    #[test]\n    fn test_method_call_display() {\n        assert_eq!(parse(\"vec.len()\").to_string(), \"vec.len()\");\n        assert_eq!(parse(\"vec.push(42)\").to_string(), \"vec.push(42)\");\n        assert_eq!(\n            parse(r#\"map.insert(\"key\", 42)\"#).to_string(),\n            r#\"map.insert(\"key\", 42)\"#\n        );\n        assert_eq!(parse(\"foo()\").to_string(), \"foo()\");\n        assert_eq!(parse(\"bar(1, 2)\").to_string(), \"bar(1, 2)\");\n    }\n\n    #[test]\n    fn test_path_and_generic_display() {\n        // Path expressions\n        assert_eq!(parse(\"std::vec::Vec\").to_string(), \"std::vec::Vec\");\n        assert_eq!(\n            parse(\"lldb_demo::User::new(1, \\\"foo\\\", \\\"bar\\\")\").to_string(),\n            r#\"lldb_demo::User::new(1, \"foo\", \"bar\")\"#\n        );\n\n        // Generic expressions\n        assert_eq!(parse(\"Vec<u64>\").to_string(), \"Vec<u64>\");\n        assert_eq!(\n            parse(\"HashMap<String, u32>\").to_string(),\n            \"HashMap<String, u32>\"\n        );\n        assert_eq!(\n            parse(\"Vec<Option<String>>\").to_string(),\n            \"Vec<Option<String>>\"\n        );\n        assert_eq!(\n            parse(\"std::collections::HashMap<String, u32>\").to_string(),\n            \"std::collections::HashMap<String, u32>\"\n        );\n    }\n}",
+          "attributes": [
+            "#[cfg(test)]"
+          ],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        }
+      ],
+      "location": {
+        "startLine": 1,
+        "startColumn": 1,
+        "endLine": 934,
+        "endColumn": 1,
+        "startByte": 0,
+        "endByte": 28252
+      }
+    }
+  },
+  "errors": []
+}

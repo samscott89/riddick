@@ -1,0 +1,994 @@
+{
+  "success": true,
+  "parseTime": 100,
+  "crateInfo": {
+    "name": "unnamed",
+    "modules": [
+      {
+        "name": "main",
+        "path": "main.rs",
+        "items": [
+          {
+            "type": "use",
+            "name": "std::fmt",
+            "visibility": "private",
+            "location": {
+              "startLine": 1,
+              "startColumn": 14,
+              "endLine": 1,
+              "endColumn": 14,
+              "startByte": 31,
+              "endByte": 44
+            },
+            "sourceCode": "use std::fmt;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "use",
+            "name": "itertools::Itertools",
+            "visibility": "private",
+            "location": {
+              "startLine": 1,
+              "startColumn": 26,
+              "endLine": 1,
+              "endColumn": 26,
+              "startByte": 46,
+              "endByte": 71
+            },
+            "sourceCode": "use itertools::Itertools;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "use",
+            "name": "rudy_types::*",
+            "visibility": "private",
+            "location": {
+              "startLine": 1,
+              "startColumn": 19,
+              "endLine": 1,
+              "endColumn": 19,
+              "startByte": 72,
+              "endByte": 90
+            },
+            "sourceCode": "use rudy_types::*;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "use",
+            "name": "unsynn::*",
+            "visibility": "private",
+            "location": {
+              "startLine": 1,
+              "startColumn": 15,
+              "endLine": 1,
+              "endColumn": 15,
+              "startByte": 91,
+              "endByte": 105
+            },
+            "sourceCode": "use unsynn::*;",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "Array",
+            "visibility": "private",
+            "location": {
+              "startLine": 25,
+              "startColumn": 2,
+              "endLine": 25,
+              "endColumn": 2,
+              "startByte": 4355,
+              "endByte": 5064
+            },
+            "sourceCode": "impl Array {\n    pub fn inner(&self) -> &Type {\n        &self.inner.content.inner\n    }\n\n    pub fn concrete_size(&self) -> Option<usize> {\n        self.inner.content.size.0.first().and_then(|c| {\n            match &c.value.second {\n                ArraySize::Fixed(size) => Some(*size),\n                ArraySize::Dynamic(_) => None, // Dynamic size is not concrete\n            }\n        })\n    }\n    pub fn generic_size(&self) -> Option<&Type> {\n        self.inner\n            .content\n            .size\n            .0\n            .first()\n            .and_then(|c| match &c.value.second {\n                ArraySize::Fixed(_) => None,\n                ArraySize::Dynamic(t) => Some(t),\n            })\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Array",
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "Tuple",
+            "visibility": "private",
+            "location": {
+              "startLine": 16,
+              "startColumn": 2,
+              "endLine": 16,
+              "endColumn": 2,
+              "startByte": 5066,
+              "endByte": 5563
+            },
+            "sourceCode": "impl Tuple {\n    pub fn inner(&self) -> Vec<Type> {\n        match self {\n            Tuple::Arity0(_) => vec![],\n            Tuple::Arity1(inner) => vec![*inner.content.first.clone()],\n            Tuple::ArityN(inner) => inner\n                .content\n                .first\n                .0\n                .iter()\n                .map(|c| *c.value.clone().first.clone())\n                .chain(std::iter::once(*inner.content.second.first.clone()))\n                .collect(),\n        }\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Tuple",
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "FnType",
+            "visibility": "private",
+            "location": {
+              "startLine": 14,
+              "startColumn": 2,
+              "endLine": 14,
+              "endColumn": 2,
+              "startByte": 5565,
+              "endByte": 5856
+            },
+            "sourceCode": "impl FnType {\n    pub fn args(&self) -> Vec<Type> {\n        self.args\n            .content\n            .0\n            .iter()\n            .map(|t| t.value.clone())\n            .collect()\n    }\n\n    pub fn ret(&self) -> Option<&Type> {\n        self.ret.0.first().map(|c| &c.value.ret)\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "FnType",
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "fmt::Display for Array",
+            "visibility": "private",
+            "location": {
+              "startLine": 13,
+              "startColumn": 2,
+              "endLine": 13,
+              "endColumn": 2,
+              "startByte": 5858,
+              "endByte": 6232
+            },
+            "sourceCode": "impl fmt::Display for Array {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"[{}\", self.inner())?;\n        if let Some(size) = self.concrete_size() {\n            write!(f, \"; {size}\")?;\n        }\n        if let Some(size) = self.generic_size() {\n            write!(f, \"; {size}\")?;\n        }\n        write!(f, \"]\")?;\n        Ok(())\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Array",
+            "traitName": "fmt::Display"
+          },
+          {
+            "type": "impl",
+            "name": "fmt::Display for DynTrait",
+            "visibility": "private",
+            "location": {
+              "startLine": 9,
+              "startColumn": 2,
+              "endLine": 9,
+              "endColumn": 2,
+              "startByte": 6234,
+              "endByte": 6463
+            },
+            "sourceCode": "impl fmt::Display for DynTrait {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(\n            f,\n            \"dyn {}\",\n            self.traits.0.iter().map(|t| &t.value).join(\" + \")\n        )\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "DynTrait",
+            "traitName": "fmt::Display"
+          },
+          {
+            "type": "impl",
+            "name": "PtrType",
+            "visibility": "private",
+            "location": {
+              "startLine": 5,
+              "startColumn": 2,
+              "endLine": 5,
+              "endColumn": 2,
+              "startByte": 6465,
+              "endByte": 6593
+            },
+            "sourceCode": "impl PtrType {\n    pub fn is_mutable(&self) -> bool {\n        matches!(self.pointer_type.second, Either::Second(Mut(_)))\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "PtrType",
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "RefType",
+            "visibility": "private",
+            "location": {
+              "startLine": 5,
+              "startColumn": 2,
+              "endLine": 5,
+              "endColumn": 2,
+              "startByte": 6594,
+              "endByte": 6693
+            },
+            "sourceCode": "impl RefType {\n    pub fn is_mutable(&self) -> bool {\n        !self.mutability.0.is_empty()\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "RefType",
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "fmt::Display for Path",
+            "visibility": "private",
+            "location": {
+              "startLine": 5,
+              "startColumn": 2,
+              "endLine": 5,
+              "endColumn": 2,
+              "startByte": 6695,
+              "endByte": 6846
+            },
+            "sourceCode": "impl fmt::Display for Path {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"{}\", self.segments().join(\"::\"))\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Path",
+            "traitName": "fmt::Display"
+          },
+          {
+            "type": "impl",
+            "name": "fmt::Display for FnType",
+            "visibility": "private",
+            "location": {
+              "startLine": 18,
+              "startColumn": 2,
+              "endLine": 18,
+              "endColumn": 2,
+              "startByte": 6848,
+              "endByte": 7351
+            },
+            "sourceCode": "impl fmt::Display for FnType {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"fn\")?;\n        if !self.args.content.0.is_empty() {\n            write!(\n                f,\n                \"({})\",\n                self.args.content.0.iter().map(|t| &t.value).join(\", \")\n            )?;\n        } else {\n            write!(f, \"()\")?;\n        }\n        if let Some(ret) = &self.ret.0.first() {\n            write!(f, \" -> {}\", ret.value.ret)?;\n        }\n        Ok(())\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "FnType",
+            "traitName": "fmt::Display"
+          },
+          {
+            "type": "impl",
+            "name": "fmt::Display for Type",
+            "visibility": "private",
+            "location": {
+              "startLine": 29,
+              "startColumn": 2,
+              "endLine": 29,
+              "endColumn": 2,
+              "startByte": 7353,
+              "endByte": 8473
+            },
+            "sourceCode": "impl fmt::Display for Type {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            Type::Ref(r) => {\n                write!(f, \"&\")?;\n                if r.is_mutable() {\n                    write!(f, \"mut \")?;\n                }\n                write!(f, \"{}\", r.inner)\n            }\n            Type::Slice(s) => write!(f, \"&[{}]\", s.inner.content),\n            Type::StrSlice(_) => write!(f, \"&str\"),\n            Type::Array(a) => write!(f, \"{a}\"),\n            Type::DynTrait(d) => write!(f, \"{d}\"),\n            Type::Tuple(t) => {\n                let elements = t.inner();\n                if elements.len() == 1 {\n                    write!(f, \"({},)\", elements[0])\n                } else {\n                    write!(f, \"({})\", elements.iter().map(|e| e.to_string()).join(\", \"))\n                }\n            }\n            Type::Ptr(p) => write!(f, \"{}{}\", p.pointer_type.tokens_to_string(), p.inner),\n            Type::Path(p) => write!(f, \"{p}\"),\n            Type::Function(fn_type) => write!(f, \"{fn_type}\"),\n            Type::Never(_) => write!(f, \"!\"),\n        }\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Type",
+            "traitName": "fmt::Display"
+          },
+          {
+            "type": "impl",
+            "name": "Path",
+            "visibility": "private",
+            "location": {
+              "startLine": 33,
+              "startColumn": 2,
+              "endLine": 33,
+              "endColumn": 2,
+              "startByte": 8475,
+              "endByte": 9717
+            },
+            "sourceCode": "impl Path {\n    pub fn segments(&self) -> Vec<String> {\n        self.segments\n            .0\n            .iter()\n            .map(|path_segment| match &path_segment.value {\n                PathSegment::Segment(segment) => {\n                    format!(\n                        \"{}{}\",\n                        segment.ident,\n                        match segment.generics.0.first().as_ref().map(|g| &g.value) {\n                            Some(GenericArgs::Parsed {\n                                _lt: _,\n                                inner,\n                                _gt: _,\n                            }) => {\n                                format!(\n                                    \"<{}>\",\n                                    inner.0.iter().map(|d| d.value.to_string()).join(\", \")\n                                )\n                            }\n                            Some(GenericArgs::Unparsed(angle_token_tree)) => {\n                                angle_token_tree.tokens_to_string()\n                            }\n                            None => String::new(),\n                        }\n                    )\n                }\n                p => p.tokens_to_string(),\n            })\n            .collect()\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Path",
+            "traitName": null
+          },
+          {
+            "type": "type_alias",
+            "name": "ParsedSymbol",
+            "visibility": "pub",
+            "location": {
+              "startLine": 1,
+              "startColumn": 63,
+              "endLine": 1,
+              "endColumn": 63,
+              "startByte": 9719,
+              "endByte": 9781
+            },
+            "sourceCode": "pub type ParsedSymbol = (Vec<String>, String, Option<String>);",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "function",
+            "name": "parse_symbol",
+            "visibility": "pub",
+            "location": {
+              "startLine": 84,
+              "startColumn": 2,
+              "endLine": 84,
+              "endColumn": 2,
+              "startByte": 9783,
+              "endByte": 12480
+            },
+            "sourceCode": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol> {\n    // First, we need to split the string by `::` while respecting angle brackets\n    let mut segments = Vec::with_capacity(4);\n    let mut current_segment = String::with_capacity(64);\n    let mut angle_depth = 0;\n    let mut chars = s.chars().peekable();\n\n    while let Some(ch) = chars.next() {\n        match ch {\n            '<' => {\n                angle_depth += 1;\n                current_segment.push(ch);\n            }\n            '>' => {\n                angle_depth -= 1;\n                current_segment.push(ch);\n            }\n            ':' if angle_depth == 0 && chars.peek() == Some(&':') => {\n                // We found `::` at the top level\n                chars.next(); // consume the second ':'\n                if !current_segment.is_empty() {\n                    segments.push(current_segment.trim().to_string());\n                    current_segment.clear();\n                }\n            }\n            '\\n' | '\\r' | '\\t' | ' ' => {\n                // Ignore consecutive whitespace characters\n                // and replace with a single space character\n                if !current_segment.is_empty() && !current_segment.ends_with(' ') {\n                    current_segment.push(' ');\n                }\n            }\n            _ => {\n                current_segment.push(ch);\n            }\n        }\n    }\n\n    // Don't forget the last segment\n    if !current_segment.is_empty() {\n        segments.push(current_segment.trim().to_string());\n    }\n\n    if segments.is_empty() {\n        anyhow::bail!(\"Empty symbol path\");\n    }\n\n    // Now we need to identify the hash, function name, and module path\n    let hash = if let Some(last) = segments.last() {\n        if last.starts_with('h') && last.chars().skip(1).all(|c| c.is_ascii_hexdigit()) {\n            segments.pop()\n        } else {\n            None\n        }\n    } else {\n        None\n    };\n\n    let Some(function_name) = segments.pop() else {\n        anyhow::bail!(\"No function name found\");\n    };\n\n    segments.shrink_to_fit();\n    let module_path = segments;\n\n    Ok((module_path, function_name, hash))\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": [
+              {
+                "name": "s",
+                "paramType": "&str",
+                "isSelf": false,
+                "isMutable": false
+              }
+            ],
+            "returnType": "-> anyhow::Result<ParsedSymbol>",
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "function",
+            "name": "parse_type",
+            "visibility": "pub",
+            "location": {
+              "startLine": 5,
+              "startColumn": 2,
+              "endLine": 5,
+              "endColumn": 2,
+              "startByte": 12482,
+              "endByte": 12650
+            },
+            "sourceCode": "pub fn parse_type(s: &str) -> unsynn::Result<Type> {\n    let mut iter = s.to_token_iter();\n    let ty = Cons::<Type, EndOfStream>::parse(&mut iter)?;\n    Ok(ty.first)\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": [
+              {
+                "name": "s",
+                "paramType": "&str",
+                "isSelf": false,
+                "isMutable": false
+              }
+            ],
+            "returnType": "-> unsynn::Result<Type>",
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "Type",
+            "visibility": "private",
+            "location": {
+              "startLine": 93,
+              "startColumn": 2,
+              "endLine": 93,
+              "endColumn": 2,
+              "startByte": 12652,
+              "endByte": 16390
+            },
+            "sourceCode": "impl Type {\n    pub fn as_layout(&self) -> Layout {\n        match self {\n            Type::Path(path) => {\n                // Convert path to typedef\n                path.as_typedef()\n            }\n            Type::Slice(slice) => {\n                let inner = slice.inner.content.clone().as_layout();\n                Layout::Primitive(PrimitiveLayout::Slice(SliceLayout {\n                    element_type: TypeDefinition::new((), inner),\n                    data_ptr_offset: 0,\n                    length_offset: 0,\n                }))\n            }\n            Type::StrSlice(_) => {\n                // For str slices, we can just return a Str type\n                Layout::Primitive(PrimitiveLayout::StrSlice(StrSliceLayout {\n                    data_ptr_offset: 0,\n                    length_offset: 0,\n                }))\n            }\n            Type::Ref(ref_type) => {\n                let inner = ref_type.inner.as_layout();\n                Layout::Primitive(PrimitiveLayout::Reference(ReferenceLayout {\n                    mutable: ref_type.is_mutable(),\n                    pointed_type: TypeDefinition::new((), inner),\n                }))\n            }\n            Type::Ptr(ptr_type) => {\n                let inner = ptr_type.inner.as_layout();\n                Layout::Primitive(PrimitiveLayout::Pointer(PointerLayout {\n                    mutable: ptr_type.is_mutable(),\n                    pointed_type: TypeDefinition::new((), inner),\n                }))\n            }\n            Type::Array(array) => {\n                let inner = array.inner().clone().as_layout();\n                let length = if let Some(size_type) = array.concrete_size() {\n                    // Try to extract numeric literal from the size\n                    // For now, we'll default to 0 if we can't parse it\n                    size_type.to_string().parse::<usize>().unwrap_or(0)\n                } else {\n                    0 // Unknown size\n                };\n\n                Layout::Primitive(PrimitiveLayout::Array(ArrayLayout {\n                    element_type: TypeDefinition::new((), inner),\n                    length,\n                }))\n            }\n            Type::Tuple(tuple) => {\n                let elements: Vec<_> = tuple\n                    .inner()\n                    .iter()\n                    .map(|t| (0, TypeDefinition::new((), t.as_layout())))\n                    .collect();\n\n                // 0-arity tuple is a unit\n                if elements.is_empty() {\n                    Layout::Primitive(PrimitiveLayout::Unit(UnitLayout))\n                } else {\n                    Layout::Primitive(PrimitiveLayout::Tuple(TupleLayout {\n                        elements,\n                        size: 0, // Would need to calculate from DWARF\n                    }))\n                }\n            }\n            Type::DynTrait(_dyn_trait) => {\n                // For trait objects, we'll use Other for now\n                Layout::Alias {\n                    name: self.to_string(),\n                }\n            }\n            Type::Function(fn_type) => {\n                Layout::Primitive(PrimitiveLayout::Function(FunctionLayout {\n                    return_type: fn_type\n                        .ret()\n                        .map(|l| TypeDefinition::new((), l.as_layout())),\n                    arg_types: fn_type\n                        .args()\n                        .iter()\n                        .map(|a| TypeDefinition::new((), a.as_layout()))\n                        .collect(),\n                }))\n            }\n            Type::Never(_) => {\n                // For the never type, we can just return a unit type\n                Layout::Primitive(PrimitiveLayout::Never(()))\n            }\n        }\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Type",
+            "traitName": null
+          },
+          {
+            "type": "impl",
+            "name": "Path",
+            "visibility": "private",
+            "location": {
+              "startLine": 280,
+              "startColumn": 2,
+              "endLine": 280,
+              "endColumn": 2,
+              "startByte": 16392,
+              "endByte": 29867
+            },
+            "sourceCode": "impl Path {\n    fn as_typedef(&self) -> Layout {\n        // First, let's extract the segments\n        let segments = self.segments();\n        if segments.is_empty() {\n            return Layout::Alias {\n                name: String::new(),\n            };\n        }\n\n        // Get the last segment as the base type name\n        let last_segment = segments.last().unwrap();\n\n        // Check if this is a primitive type\n        if segments.len() == 1 {\n            match last_segment.as_str() {\n                \"u8\" => {\n                    return UnsignedIntLayout { size: 1 }.into();\n                }\n                \"u16\" => {\n                    return UnsignedIntLayout { size: 2 }.into();\n                }\n                \"u32\" => {\n                    return UnsignedIntLayout { size: 4 }.into();\n                }\n                \"u64\" => {\n                    return UnsignedIntLayout { size: 8 }.into();\n                }\n                \"u128\" => {\n                    return UnsignedIntLayout { size: 16 }.into();\n                }\n                \"usize\" => {\n                    return UnsignedIntLayout {\n                        size: std::mem::size_of::<usize>(),\n                    }\n                    .into();\n                }\n                \"i8\" => return IntLayout { size: 1 }.into(),\n                \"i16\" => return IntLayout { size: 2 }.into(),\n                \"i32\" => return IntLayout { size: 4 }.into(),\n                \"i64\" => return IntLayout { size: 8 }.into(),\n                \"i128\" => return IntLayout { size: 16 }.into(),\n                \"isize\" => {\n                    return IntLayout {\n                        size: std::mem::size_of::<isize>(),\n                    }\n                    .into();\n                }\n                \"f32\" => return FloatLayout { size: 4 }.into(),\n                \"f64\" => return FloatLayout { size: 8 }.into(),\n                \"bool\" => return Layout::Primitive(PrimitiveLayout::Bool(())),\n                \"char\" => return Layout::Primitive(PrimitiveLayout::Char(())),\n                \"str\" => return Layout::Primitive(PrimitiveLayout::Str(())),\n                \"()\" => return Layout::Primitive(PrimitiveLayout::Unit(UnitLayout)),\n                _ => {}\n            }\n        }\n\n        // Check if this is a standard library type by examining the path\n        let is_std = segments[0] == \"std\" || segments[0] == \"core\" || segments[0] == \"alloc\";\n        let is_hashbrown = segments[0] == \"hashbrown\";\n\n        tracing::trace!(\"Parser segments: {:?}, is_std: {}\", segments, is_std);\n\n        if is_std || is_hashbrown || segments.len() == 1 {\n            // Parse the last segment for generic types\n            // (we're guaranteed to have at least one segment here)\n            if let Some(path_segment) = self.segments.0.last() {\n                if let PathSegment::Segment(segment) = &path_segment.value {\n                    let type_name = segment.ident.to_string();\n\n                    let get_generics =\n                        || {\n                            segment.generics.0.first().map_or_else(\n                                std::vec::Vec::new,\n                                |generic_args| match &generic_args.value {\n                                    GenericArgs::Parsed { inner, .. } => {\n                                        inner.0.iter().map(|d| d.value.clone()).collect()\n                                    }\n                                    GenericArgs::Unparsed(_) => vec![],\n                                },\n                            )\n                        };\n\n                    tracing::trace!(\"Checking std type: '{}' against known types\", type_name);\n\n                    match type_name.as_str() {\n                        \"String\" => {\n                            tracing::trace!(\"Matched String type!\");\n                            return Layout::Std(StdLayout::String(StringLayout(VecLayout {\n                                length_offset: 0,\n                                data_ptr_offset: 0,\n                                capacity_offset: 0,\n                                inner_type: TypeDefinition::new(\n                                    (),\n                                    Layout::Primitive(PrimitiveLayout::UnsignedInt(\n                                        UnsignedIntLayout { size: 1 },\n                                    )),\n                                ),\n                            })));\n                        }\n                        \"Vec\" => {\n                            let inner = get_generics()\n                                .first()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            return Layout::Std(StdLayout::Vec(VecLayout {\n                                inner_type: inner,\n                                length_offset: 0,\n                                data_ptr_offset: 0,\n                                capacity_offset: 0,\n                            }));\n                        }\n                        \"Option\" => {\n                            let inner = get_generics()\n                                .first()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            return Layout::Std(StdLayout::Option(OptionLayout {\n                                name: \"Option\".to_string(),\n                                discriminant: Discriminant {\n                                    offset: 0,\n                                    ty: DiscriminantType::Implicit,\n                                },\n                                some_offset: 0,\n                                some_type: inner,\n                                size: 0,\n                            }));\n                        }\n                        \"Result\" => {\n                            let mut generics_iter = get_generics().into_iter();\n                            let ok_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let err_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            return Layout::Std(StdLayout::Result(ResultLayout {\n                                name: \"Result\".to_string(),\n                                discriminant: Discriminant {\n                                    offset: 0,\n                                    ty: DiscriminantType::Implicit,\n                                },\n                                ok_type,\n                                ok_offset: 0,\n                                err_type,\n                                err_offset: 0,\n                                size: 0,\n                            }));\n                        }\n                        \"HashMap\" | \"BTreeMap\" => {\n                            let mut generics_iter = get_generics().into_iter();\n                            let key_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let value_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let variant = match type_name.as_str() {\n                                \"HashMap\" => MapVariant::HashMap {\n                                    bucket_mask_offset: 0,\n                                    ctrl_offset: 0,\n                                    items_offset: 0,\n                                    pair_size: 0,\n                                    key_offset: 0,\n                                    value_offset: 0,\n                                },\n                                \"BTreeMap\" => MapVariant::BTreeMap {\n                                    length_offset: 0,\n                                    root_offset: 0,\n                                    root_layout: BTreeRootLayout {\n                                        node_offset: 0,\n                                        height_offset: 0,\n                                    },\n                                    node_layout: BTreeNodeLayout {\n                                        keys_offset: 0,\n                                        vals_offset: 0,\n                                        len_offset: 0,\n                                        edges_offset: 0,\n                                    },\n                                },\n                                _ => unreachable!(),\n                            };\n                            tracing::trace!(\"Matched Map type: '{type_name}'\");\n                            return Layout::Std(StdLayout::Map(MapLayout {\n                                key_type,\n                                value_type,\n                                variant,\n                            }));\n                        }\n                        \"Box\" | \"Rc\" | \"Arc\" | \"Cell\" | \"RefCell\" | \"UnsafeCell\" | \"Mutex\"\n                        | \"RwLock\" => {\n                            let inner = get_generics()\n                                .into_iter()\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let variant = match type_name.as_str() {\n                                \"Box\" => SmartPtrVariant::Box,\n                                \"Rc\" => SmartPtrVariant::Rc,\n                                \"Arc\" => SmartPtrVariant::Arc,\n                                \"Cell\" => SmartPtrVariant::Cell,\n                                \"RefCell\" => SmartPtrVariant::RefCell,\n                                \"UnsafeCell\" => SmartPtrVariant::UnsafeCell,\n                                \"Mutex\" => SmartPtrVariant::Mutex,\n                                \"RwLock\" => SmartPtrVariant::RwLock,\n                                _ => unreachable!(),\n                            };\n                            return Layout::Std(StdLayout::SmartPtr(SmartPtrLayout {\n                                inner_type: inner,\n                                inner_ptr_offset: 0,\n                                data_ptr_offset: 0,\n                                variant,\n                            }));\n                        }\n                        _ => {}\n                    }\n                }\n            }\n        }\n\n        // Default case: treat as a custom type (struct/enum) or alias\n        Layout::Alias {\n            name: last_segment.clone(),\n        }\n    }\n}",
+            "attributes": [],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": "Path",
+            "traitName": null
+          },
+          {
+            "type": "mod",
+            "name": "test",
+            "visibility": "private",
+            "location": {
+              "startLine": 393,
+              "startColumn": 2,
+              "endLine": 393,
+              "endColumn": 2,
+              "startByte": 29869,
+              "endByte": 43490
+            },
+            "sourceCode": "#[cfg(test)]\nmod test {\n    use itertools::Itertools;\n    use pretty_assertions::assert_eq;\n    use rudy_types::*;\n\n    use super::*;\n\n    #[track_caller]\n    fn parse_symbol(s: &str) -> ParsedSymbol {\n        match super::parse_symbol(s) {\n            Ok(s) => s,\n            Err(e) => {\n                panic!(\n                    \"Failed to parse symbol `{s}`: {e}\\nTokens:\\n{}\",\n                    s.to_token_iter().map(|t| format!(\"{t:?}\")).join(\"\\n\")\n                );\n            }\n        }\n    }\n\n    #[track_caller]\n    fn parse_type(s: &str) -> Type {\n        match super::parse_type(s) {\n            Ok(p) => p,\n            Err(e) => {\n                panic!(\n                    \"Failed to parse type `{s}`: {e}\\nTokens:\\n{}\",\n                    s.to_token_iter().map(|t| format!(\"{t:?}\")).join(\"\\n\")\n                );\n            }\n        }\n    }\n\n    #[allow(unused)]\n    #[track_caller]\n    fn parse_arbitrary<T>(s: &str) -> T\n    where\n        T: Parse,\n    {\n        let mut iter = s.to_token_iter();\n        match Cons::<T, EndOfStream>::parse(&mut iter) {\n            Ok(t) => t.first,\n            Err(e) => {\n                panic!(\n                    \"Failed to parse `{s}` as {}: {e}\\nTokens:\\n{}\",\n                    std::any::type_name::<T>(),\n                    s.to_token_iter().map(|t| format!(\"{t:?}\")).join(\"\\n\")\n                );\n            }\n        }\n    }\n\n    #[test]\n    fn test_symbol_parsing() {\n        parse_symbol(\"u8\");\n        let mut iter = \"<impl foo as bar>\".to_token_iter();\n        AngleTokenTree::parse(&mut iter).unwrap();\n        // let mut iter = \"NonZero<u8>\".to_token_iter();\n        // Cons::<Ident, BracketGroupContaining<Path>>::parse(&mut iter).unwrap();\n        parse_symbol(\"NonZero\");\n        parse_symbol(\"NonZero<u8>\");\n        parse_symbol(\"core::num::nonzero::NonZero\");\n        parse_symbol(\"core::num::nonzero::NonZero<u8>\");\n        parse_symbol(\"core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858\");\n        parse_symbol(\n            \"drop_in_place<std::backtrace_rs::symbolize::gimli::parse_running_mmaps::MapsEntry>\",\n        );\n        parse_symbol(\n            \"alloc::ffi::c_str::<\n                impl\n                core::convert::From<\n                    &core::ffi::c_str::CStr\n                >\n                for\n                alloc::boxed::Box<\n                    core::ffi::c_str::CStr\n                >\n            >::from::hec874816052de6db\",\n        );\n\n        assert_eq!(\n            parse_symbol(\n                \"alloc::ffi::c_str::<\n                    impl\n                    core::convert::From<\n                        &core::ffi::c_str::CStr\n                    >\n                    for\n                    alloc::boxed::Box<\n                        core::ffi::c_str::CStr\n                    >\n                >::from::hec874816052de6db\"\n            )\n            ,\n            (\n                vec![\n                    \"alloc\".to_string(),\n                    \"ffi\".to_string(),\n                    \"c_str\".to_string(),\n                    \"< impl core::convert::From< &core::ffi::c_str::CStr > for alloc::boxed::Box< core::ffi::c_str::CStr > >\".to_string(),\n                ],\n                \"from\".to_string(),\n                Some(\"hec874816052de6db\".to_string())\n            )\n        );\n        parse_symbol(\"core::ops::function::FnOnce::call_once{{vtable.shim}}::h7689c9dccb951788\");\n\n        // other cases\n        parse_symbol(\"_Unwind_SetIP@GCC_3.0\");\n        parse_symbol(\"__rustc[95feac21a9532783]::__rust_alloc_zeroed\");\n    }\n\n    #[test]\n    fn test_type_parsing() {\n        parse_type(\"u8\");\n        parse_type(\"&u8\");\n        parse_type(\"dyn core::fmt::Debug\");\n        parse_type(\"dyn core::fmt::Debug + core::fmt::Display\");\n        parse_type(\"&mut dyn core::fmt::Write\");\n        parse_type(\"&[core::fmt::rt::Argument]\");\n        parse_type(\"<&alloc::string::String as core::fmt::Debug>::{vtable_type}\");\n        parse_type(\"(usize, core::option::Option<usize>)\");\n        parse_type(\"*const [i32]\");\n        parse_type(\"&mut dyn core::ops::function::FnMut<(usize), Output=bool>\");\n        parse_type(\"&&i32\");\n        parse_type(\"!\");\n    }\n\n    #[test]\n    fn test_type_printing() {\n        let s = \"hashbrown::map::HashMap<alloc::string::String, i32, std::hash::random::RandomState, alloc::alloc::Global>\";\n        assert_eq!(parse_type(s).to_string(), s.to_string());\n    }\n\n    #[track_caller]\n    fn infer<T: Into<Layout> + fmt::Debug>(s: &str, expected: T) {\n        let ty = parse_type(s).as_layout();\n        assert_eq!(ty, expected.into(), \"Failed to parse type `{s}`\");\n    }\n\n    fn string_def() -> TypeDefinition {\n        TypeDefinition::new(\n            (),\n            Layout::Std(StdLayout::String(StringLayout(VecLayout {\n                length_offset: 0,\n                data_ptr_offset: 0,\n                capacity_offset: 0,\n                inner_type: TypeDefinition::new(\n                    (),\n                    Layout::Primitive(PrimitiveLayout::UnsignedInt(UnsignedIntLayout { size: 1 })),\n                ),\n            }))),\n        )\n    }\n\n    #[test]\n    fn test_type_inference() {\n        let _ = tracing_subscriber::fmt()\n            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())\n            .try_init();\n\n        infer(\"u8\", UnsignedIntLayout::u8());\n        infer(\"u32\", UnsignedIntLayout::u32());\n        infer(\"()\", PrimitiveLayout::from(UnitLayout));\n        infer(\n            \"(u8,)\",\n            PrimitiveLayout::Tuple(TupleLayout {\n                elements: vec![(0, TypeDefinition::new((), UnsignedIntLayout::u8().into()))],\n                size: 0, // Would need to calculate from DWARF\n            }),\n        );\n        infer(\n            \"(u8,u64)\",\n            PrimitiveLayout::Tuple(TupleLayout {\n                elements: vec![\n                    (0, TypeDefinition::new((), UnsignedIntLayout::u8().into())),\n                    (0, TypeDefinition::new((), UnsignedIntLayout::u64().into())),\n                ],\n                size: 0, // Would need to calculate from DWARF\n            }),\n        );\n        infer(\n            \"&u8\",\n            ReferenceLayout::new_immutable(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"&mut u8\",\n            ReferenceLayout::new_mutable(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"dyn core::fmt::Debug\",\n            Layout::Alias {\n                name: \"dyn core::fmt::Debug\".to_string(),\n            },\n        );\n        infer(\n            \"alloc::vec::Vec<u8>\",\n            VecLayout::new(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"alloc::vec::Vec<alloc::vec::Vec<u8>>\",\n            VecLayout::new(VecLayout::new(UnsignedIntLayout::u8())),\n        );\n        infer(\n            \"alloc::vec::Vec<u8, alloc::alloc::Global>\",\n            VecLayout::new(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"core::option::Option<i32>\",\n            StdLayout::Option(OptionLayout {\n                name: \"Option\".to_string(),\n                discriminant: Discriminant {\n                    offset: 0,\n                    ty: DiscriminantType::Implicit,\n                },\n                some_offset: 0,\n                some_type: TypeDefinition::new((), IntLayout::i32().into()),\n                size: 0,\n            }),\n        );\n        infer(\n            \"alloc::boxed::Box<i32>\",\n            SmartPtrLayout {\n                inner_type: TypeDefinition::new((), IntLayout::i32().into()),\n                variant: SmartPtrVariant::Box,\n                inner_ptr_offset: 0,\n                data_ptr_offset: 0,\n            },\n        );\n        infer(\n            \"alloc::String::String\",\n            string_def().layout.as_ref().clone(),\n        );\n        infer(\n            \"std::collections::hash::map::HashMap<alloc::string::String, alloc::string::String>\",\n            MapLayout {\n                key_type: string_def(),\n                value_type: string_def(),\n                variant: MapVariant::HashMap {\n                    bucket_mask_offset: 0,\n                    ctrl_offset: 0,\n                    items_offset: 0,\n                    pair_size: 0,\n                    key_offset: 0,\n                    value_offset: 0,\n                },\n            },\n        );\n\n        infer(\n            \"core::num::nonzero::NonZero<u8>\",\n            Layout::Alias {\n                name: \"NonZero<u8>\".to_string(),\n            },\n        );\n\n        infer(\n            \"fn(&u64, &mut core::fmt::Formatter) -> core::result::Result<(), core::fmt::Error>\",\n            Layout::Primitive(PrimitiveLayout::Function(FunctionLayout {\n                arg_types: vec![\n                    TypeDefinition::new(\n                        (),\n                        ReferenceLayout::new_immutable(UnsignedIntLayout::u64()).into(),\n                    ),\n                    TypeDefinition::new(\n                        (),\n                        ReferenceLayout::new_mutable(Layout::Alias {\n                            name: \"Formatter\".to_string(),\n                        })\n                        .into(),\n                    ),\n                ],\n                return_type: Some(TypeDefinition::new(\n                    (),\n                    StdLayout::Result(ResultLayout {\n                        name: \"Result\".to_string(),\n                        discriminant: Discriminant {\n                            offset: 0,\n                            ty: DiscriminantType::Implicit,\n                        },\n                        ok_type: TypeDefinition::new(\n                            (),\n                            Layout::Primitive(PrimitiveLayout::Unit(UnitLayout)),\n                        ),\n                        ok_offset: 0,\n                        err_type: TypeDefinition::new(\n                            (),\n                            Layout::Alias {\n                                name: \"Error\".to_string(),\n                            },\n                        ),\n                        err_offset: 0,\n                        size: 0,\n                    })\n                    .into(),\n                )),\n            })),\n        );\n        infer(\n            \"&[u8]\",\n            Layout::Primitive(PrimitiveLayout::Slice(SliceLayout {\n                element_type: TypeDefinition::new((), UnsignedIntLayout::u8().into()),\n                data_ptr_offset: 0,\n                length_offset: 0,\n            })),\n        );\n        infer(\n            \"&str\",\n            Layout::Primitive(PrimitiveLayout::StrSlice(StrSliceLayout {\n                data_ptr_offset: 0,\n                length_offset: 0,\n            })),\n        )\n    }\n\n    #[test]\n    fn test_symbol_parsing_basic() {\n        // Test basic function without generics\n        let (module_path, function_name, hash) = parse_symbol(\"core::num::ilog2::h12345\");\n        assert_eq!(module_path, vec![\"core\", \"num\"]);\n        assert_eq!(function_name, \"ilog2\");\n        assert_eq!(hash, Some(\"h12345\".to_string()));\n\n        // Test function with generics in module path\n        let (module_path, function_name, hash) =\n            parse_symbol(\"core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858\");\n        assert_eq!(module_path, vec![\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]);\n        assert_eq!(function_name, \"ilog2\");\n        assert_eq!(hash, Some(\"hc1106854ed63a858\".to_string()));\n\n        // Test function without hash\n        let (module_path, function_name, hash) =\n            parse_symbol(\"std::collections::HashMap<String, i32>::insert\");\n        assert_eq!(\n            module_path,\n            vec![\"std\", \"collections\", \"HashMap<String, i32>\"]\n        );\n        assert_eq!(function_name, \"insert\");\n        assert_eq!(hash, None);\n\n        // Test nested generics\n        let (module_path, function_name, hash) =\n            parse_symbol(\"std::collections::HashMap<String, Vec<i32>>::get\");\n        assert_eq!(\n            module_path,\n            vec![\"std\", \"collections\", \"HashMap<String, Vec<i32>>\"]\n        );\n        assert_eq!(function_name, \"get\");\n        assert_eq!(hash, None);\n\n        // Test single segment (just function name)\n        let (module_path, function_name, hash) = parse_symbol(\"main\");\n        assert_eq!(module_path, Vec::<String>::new());\n        assert_eq!(function_name, \"main\");\n        assert_eq!(hash, None);\n\n        // Test single segment with hash\n        let (module_path, function_name, hash) = parse_symbol(\"main::h123abc\");\n        assert_eq!(module_path, Vec::<String>::new());\n        assert_eq!(function_name, \"main\");\n        assert_eq!(hash, Some(\"h123abc\".to_string()));\n    }\n\n    #[test]\n    fn test_symbol_parsing_complex_cases() {\n        // Test from the original parser tests\n        let (module_path, function_name, hash) = parse_symbol(\n            \"alloc::ffi::c_str::<impl core::convert::From<&core::ffi::c_str::CStr> for alloc::boxed::Box<core::ffi::c_str::CStr>>::from::hec874816052de6db\",\n        );\n\n        assert_eq!(\n            module_path,\n            vec![\n                \"alloc\",\n                \"ffi\",\n                \"c_str\",\n                \"<impl core::convert::From<&core::ffi::c_str::CStr> for alloc::boxed::Box<core::ffi::c_str::CStr>>\"\n            ]\n        );\n        assert_eq!(function_name, \"from\");\n        assert_eq!(hash, Some(\"hec874816052de6db\".to_string()));\n    }\n\n    #[test]\n    fn test_symbol_parsing_errors() {\n        // Test empty string\n        assert!(super::parse_symbol(\"\").is_err());\n\n        // Test only hash\n        assert!(super::parse_symbol(\"h123abc\").is_err());\n    }\n}",
+            "attributes": [
+              "#[cfg(test)]"
+            ],
+            "genericParameters": [],
+            "parameters": null,
+            "returnType": null,
+            "fields": null,
+            "variants": null,
+            "implType": null,
+            "traitName": null
+          }
+        ],
+        "location": {
+          "startLine": 1,
+          "startColumn": 1,
+          "endLine": 1224,
+          "endColumn": 1,
+          "startByte": 0,
+          "endByte": 43491
+        }
+      }
+    ],
+    "rootModule": {
+      "name": "main",
+      "path": "main.rs",
+      "items": [
+        {
+          "type": "use",
+          "name": "std::fmt",
+          "visibility": "private",
+          "location": {
+            "startLine": 1,
+            "startColumn": 14,
+            "endLine": 1,
+            "endColumn": 14,
+            "startByte": 31,
+            "endByte": 44
+          },
+          "sourceCode": "use std::fmt;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "use",
+          "name": "itertools::Itertools",
+          "visibility": "private",
+          "location": {
+            "startLine": 1,
+            "startColumn": 26,
+            "endLine": 1,
+            "endColumn": 26,
+            "startByte": 46,
+            "endByte": 71
+          },
+          "sourceCode": "use itertools::Itertools;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "use",
+          "name": "rudy_types::*",
+          "visibility": "private",
+          "location": {
+            "startLine": 1,
+            "startColumn": 19,
+            "endLine": 1,
+            "endColumn": 19,
+            "startByte": 72,
+            "endByte": 90
+          },
+          "sourceCode": "use rudy_types::*;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "use",
+          "name": "unsynn::*",
+          "visibility": "private",
+          "location": {
+            "startLine": 1,
+            "startColumn": 15,
+            "endLine": 1,
+            "endColumn": 15,
+            "startByte": 91,
+            "endByte": 105
+          },
+          "sourceCode": "use unsynn::*;",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "Array",
+          "visibility": "private",
+          "location": {
+            "startLine": 25,
+            "startColumn": 2,
+            "endLine": 25,
+            "endColumn": 2,
+            "startByte": 4355,
+            "endByte": 5064
+          },
+          "sourceCode": "impl Array {\n    pub fn inner(&self) -> &Type {\n        &self.inner.content.inner\n    }\n\n    pub fn concrete_size(&self) -> Option<usize> {\n        self.inner.content.size.0.first().and_then(|c| {\n            match &c.value.second {\n                ArraySize::Fixed(size) => Some(*size),\n                ArraySize::Dynamic(_) => None, // Dynamic size is not concrete\n            }\n        })\n    }\n    pub fn generic_size(&self) -> Option<&Type> {\n        self.inner\n            .content\n            .size\n            .0\n            .first()\n            .and_then(|c| match &c.value.second {\n                ArraySize::Fixed(_) => None,\n                ArraySize::Dynamic(t) => Some(t),\n            })\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Array",
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "Tuple",
+          "visibility": "private",
+          "location": {
+            "startLine": 16,
+            "startColumn": 2,
+            "endLine": 16,
+            "endColumn": 2,
+            "startByte": 5066,
+            "endByte": 5563
+          },
+          "sourceCode": "impl Tuple {\n    pub fn inner(&self) -> Vec<Type> {\n        match self {\n            Tuple::Arity0(_) => vec![],\n            Tuple::Arity1(inner) => vec![*inner.content.first.clone()],\n            Tuple::ArityN(inner) => inner\n                .content\n                .first\n                .0\n                .iter()\n                .map(|c| *c.value.clone().first.clone())\n                .chain(std::iter::once(*inner.content.second.first.clone()))\n                .collect(),\n        }\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Tuple",
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "FnType",
+          "visibility": "private",
+          "location": {
+            "startLine": 14,
+            "startColumn": 2,
+            "endLine": 14,
+            "endColumn": 2,
+            "startByte": 5565,
+            "endByte": 5856
+          },
+          "sourceCode": "impl FnType {\n    pub fn args(&self) -> Vec<Type> {\n        self.args\n            .content\n            .0\n            .iter()\n            .map(|t| t.value.clone())\n            .collect()\n    }\n\n    pub fn ret(&self) -> Option<&Type> {\n        self.ret.0.first().map(|c| &c.value.ret)\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "FnType",
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "fmt::Display for Array",
+          "visibility": "private",
+          "location": {
+            "startLine": 13,
+            "startColumn": 2,
+            "endLine": 13,
+            "endColumn": 2,
+            "startByte": 5858,
+            "endByte": 6232
+          },
+          "sourceCode": "impl fmt::Display for Array {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"[{}\", self.inner())?;\n        if let Some(size) = self.concrete_size() {\n            write!(f, \"; {size}\")?;\n        }\n        if let Some(size) = self.generic_size() {\n            write!(f, \"; {size}\")?;\n        }\n        write!(f, \"]\")?;\n        Ok(())\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Array",
+          "traitName": "fmt::Display"
+        },
+        {
+          "type": "impl",
+          "name": "fmt::Display for DynTrait",
+          "visibility": "private",
+          "location": {
+            "startLine": 9,
+            "startColumn": 2,
+            "endLine": 9,
+            "endColumn": 2,
+            "startByte": 6234,
+            "endByte": 6463
+          },
+          "sourceCode": "impl fmt::Display for DynTrait {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(\n            f,\n            \"dyn {}\",\n            self.traits.0.iter().map(|t| &t.value).join(\" + \")\n        )\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "DynTrait",
+          "traitName": "fmt::Display"
+        },
+        {
+          "type": "impl",
+          "name": "PtrType",
+          "visibility": "private",
+          "location": {
+            "startLine": 5,
+            "startColumn": 2,
+            "endLine": 5,
+            "endColumn": 2,
+            "startByte": 6465,
+            "endByte": 6593
+          },
+          "sourceCode": "impl PtrType {\n    pub fn is_mutable(&self) -> bool {\n        matches!(self.pointer_type.second, Either::Second(Mut(_)))\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "PtrType",
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "RefType",
+          "visibility": "private",
+          "location": {
+            "startLine": 5,
+            "startColumn": 2,
+            "endLine": 5,
+            "endColumn": 2,
+            "startByte": 6594,
+            "endByte": 6693
+          },
+          "sourceCode": "impl RefType {\n    pub fn is_mutable(&self) -> bool {\n        !self.mutability.0.is_empty()\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "RefType",
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "fmt::Display for Path",
+          "visibility": "private",
+          "location": {
+            "startLine": 5,
+            "startColumn": 2,
+            "endLine": 5,
+            "endColumn": 2,
+            "startByte": 6695,
+            "endByte": 6846
+          },
+          "sourceCode": "impl fmt::Display for Path {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"{}\", self.segments().join(\"::\"))\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Path",
+          "traitName": "fmt::Display"
+        },
+        {
+          "type": "impl",
+          "name": "fmt::Display for FnType",
+          "visibility": "private",
+          "location": {
+            "startLine": 18,
+            "startColumn": 2,
+            "endLine": 18,
+            "endColumn": 2,
+            "startByte": 6848,
+            "endByte": 7351
+          },
+          "sourceCode": "impl fmt::Display for FnType {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        write!(f, \"fn\")?;\n        if !self.args.content.0.is_empty() {\n            write!(\n                f,\n                \"({})\",\n                self.args.content.0.iter().map(|t| &t.value).join(\", \")\n            )?;\n        } else {\n            write!(f, \"()\")?;\n        }\n        if let Some(ret) = &self.ret.0.first() {\n            write!(f, \" -> {}\", ret.value.ret)?;\n        }\n        Ok(())\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "FnType",
+          "traitName": "fmt::Display"
+        },
+        {
+          "type": "impl",
+          "name": "fmt::Display for Type",
+          "visibility": "private",
+          "location": {
+            "startLine": 29,
+            "startColumn": 2,
+            "endLine": 29,
+            "endColumn": 2,
+            "startByte": 7353,
+            "endByte": 8473
+          },
+          "sourceCode": "impl fmt::Display for Type {\n    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n        match self {\n            Type::Ref(r) => {\n                write!(f, \"&\")?;\n                if r.is_mutable() {\n                    write!(f, \"mut \")?;\n                }\n                write!(f, \"{}\", r.inner)\n            }\n            Type::Slice(s) => write!(f, \"&[{}]\", s.inner.content),\n            Type::StrSlice(_) => write!(f, \"&str\"),\n            Type::Array(a) => write!(f, \"{a}\"),\n            Type::DynTrait(d) => write!(f, \"{d}\"),\n            Type::Tuple(t) => {\n                let elements = t.inner();\n                if elements.len() == 1 {\n                    write!(f, \"({},)\", elements[0])\n                } else {\n                    write!(f, \"({})\", elements.iter().map(|e| e.to_string()).join(\", \"))\n                }\n            }\n            Type::Ptr(p) => write!(f, \"{}{}\", p.pointer_type.tokens_to_string(), p.inner),\n            Type::Path(p) => write!(f, \"{p}\"),\n            Type::Function(fn_type) => write!(f, \"{fn_type}\"),\n            Type::Never(_) => write!(f, \"!\"),\n        }\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Type",
+          "traitName": "fmt::Display"
+        },
+        {
+          "type": "impl",
+          "name": "Path",
+          "visibility": "private",
+          "location": {
+            "startLine": 33,
+            "startColumn": 2,
+            "endLine": 33,
+            "endColumn": 2,
+            "startByte": 8475,
+            "endByte": 9717
+          },
+          "sourceCode": "impl Path {\n    pub fn segments(&self) -> Vec<String> {\n        self.segments\n            .0\n            .iter()\n            .map(|path_segment| match &path_segment.value {\n                PathSegment::Segment(segment) => {\n                    format!(\n                        \"{}{}\",\n                        segment.ident,\n                        match segment.generics.0.first().as_ref().map(|g| &g.value) {\n                            Some(GenericArgs::Parsed {\n                                _lt: _,\n                                inner,\n                                _gt: _,\n                            }) => {\n                                format!(\n                                    \"<{}>\",\n                                    inner.0.iter().map(|d| d.value.to_string()).join(\", \")\n                                )\n                            }\n                            Some(GenericArgs::Unparsed(angle_token_tree)) => {\n                                angle_token_tree.tokens_to_string()\n                            }\n                            None => String::new(),\n                        }\n                    )\n                }\n                p => p.tokens_to_string(),\n            })\n            .collect()\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Path",
+          "traitName": null
+        },
+        {
+          "type": "type_alias",
+          "name": "ParsedSymbol",
+          "visibility": "pub",
+          "location": {
+            "startLine": 1,
+            "startColumn": 63,
+            "endLine": 1,
+            "endColumn": 63,
+            "startByte": 9719,
+            "endByte": 9781
+          },
+          "sourceCode": "pub type ParsedSymbol = (Vec<String>, String, Option<String>);",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "function",
+          "name": "parse_symbol",
+          "visibility": "pub",
+          "location": {
+            "startLine": 84,
+            "startColumn": 2,
+            "endLine": 84,
+            "endColumn": 2,
+            "startByte": 9783,
+            "endByte": 12480
+          },
+          "sourceCode": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol> {\n    // First, we need to split the string by `::` while respecting angle brackets\n    let mut segments = Vec::with_capacity(4);\n    let mut current_segment = String::with_capacity(64);\n    let mut angle_depth = 0;\n    let mut chars = s.chars().peekable();\n\n    while let Some(ch) = chars.next() {\n        match ch {\n            '<' => {\n                angle_depth += 1;\n                current_segment.push(ch);\n            }\n            '>' => {\n                angle_depth -= 1;\n                current_segment.push(ch);\n            }\n            ':' if angle_depth == 0 && chars.peek() == Some(&':') => {\n                // We found `::` at the top level\n                chars.next(); // consume the second ':'\n                if !current_segment.is_empty() {\n                    segments.push(current_segment.trim().to_string());\n                    current_segment.clear();\n                }\n            }\n            '\\n' | '\\r' | '\\t' | ' ' => {\n                // Ignore consecutive whitespace characters\n                // and replace with a single space character\n                if !current_segment.is_empty() && !current_segment.ends_with(' ') {\n                    current_segment.push(' ');\n                }\n            }\n            _ => {\n                current_segment.push(ch);\n            }\n        }\n    }\n\n    // Don't forget the last segment\n    if !current_segment.is_empty() {\n        segments.push(current_segment.trim().to_string());\n    }\n\n    if segments.is_empty() {\n        anyhow::bail!(\"Empty symbol path\");\n    }\n\n    // Now we need to identify the hash, function name, and module path\n    let hash = if let Some(last) = segments.last() {\n        if last.starts_with('h') && last.chars().skip(1).all(|c| c.is_ascii_hexdigit()) {\n            segments.pop()\n        } else {\n            None\n        }\n    } else {\n        None\n    };\n\n    let Some(function_name) = segments.pop() else {\n        anyhow::bail!(\"No function name found\");\n    };\n\n    segments.shrink_to_fit();\n    let module_path = segments;\n\n    Ok((module_path, function_name, hash))\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": [
+            {
+              "name": "s",
+              "paramType": "&str",
+              "isSelf": false,
+              "isMutable": false
+            }
+          ],
+          "returnType": "-> anyhow::Result<ParsedSymbol>",
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "function",
+          "name": "parse_type",
+          "visibility": "pub",
+          "location": {
+            "startLine": 5,
+            "startColumn": 2,
+            "endLine": 5,
+            "endColumn": 2,
+            "startByte": 12482,
+            "endByte": 12650
+          },
+          "sourceCode": "pub fn parse_type(s: &str) -> unsynn::Result<Type> {\n    let mut iter = s.to_token_iter();\n    let ty = Cons::<Type, EndOfStream>::parse(&mut iter)?;\n    Ok(ty.first)\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": [
+            {
+              "name": "s",
+              "paramType": "&str",
+              "isSelf": false,
+              "isMutable": false
+            }
+          ],
+          "returnType": "-> unsynn::Result<Type>",
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "Type",
+          "visibility": "private",
+          "location": {
+            "startLine": 93,
+            "startColumn": 2,
+            "endLine": 93,
+            "endColumn": 2,
+            "startByte": 12652,
+            "endByte": 16390
+          },
+          "sourceCode": "impl Type {\n    pub fn as_layout(&self) -> Layout {\n        match self {\n            Type::Path(path) => {\n                // Convert path to typedef\n                path.as_typedef()\n            }\n            Type::Slice(slice) => {\n                let inner = slice.inner.content.clone().as_layout();\n                Layout::Primitive(PrimitiveLayout::Slice(SliceLayout {\n                    element_type: TypeDefinition::new((), inner),\n                    data_ptr_offset: 0,\n                    length_offset: 0,\n                }))\n            }\n            Type::StrSlice(_) => {\n                // For str slices, we can just return a Str type\n                Layout::Primitive(PrimitiveLayout::StrSlice(StrSliceLayout {\n                    data_ptr_offset: 0,\n                    length_offset: 0,\n                }))\n            }\n            Type::Ref(ref_type) => {\n                let inner = ref_type.inner.as_layout();\n                Layout::Primitive(PrimitiveLayout::Reference(ReferenceLayout {\n                    mutable: ref_type.is_mutable(),\n                    pointed_type: TypeDefinition::new((), inner),\n                }))\n            }\n            Type::Ptr(ptr_type) => {\n                let inner = ptr_type.inner.as_layout();\n                Layout::Primitive(PrimitiveLayout::Pointer(PointerLayout {\n                    mutable: ptr_type.is_mutable(),\n                    pointed_type: TypeDefinition::new((), inner),\n                }))\n            }\n            Type::Array(array) => {\n                let inner = array.inner().clone().as_layout();\n                let length = if let Some(size_type) = array.concrete_size() {\n                    // Try to extract numeric literal from the size\n                    // For now, we'll default to 0 if we can't parse it\n                    size_type.to_string().parse::<usize>().unwrap_or(0)\n                } else {\n                    0 // Unknown size\n                };\n\n                Layout::Primitive(PrimitiveLayout::Array(ArrayLayout {\n                    element_type: TypeDefinition::new((), inner),\n                    length,\n                }))\n            }\n            Type::Tuple(tuple) => {\n                let elements: Vec<_> = tuple\n                    .inner()\n                    .iter()\n                    .map(|t| (0, TypeDefinition::new((), t.as_layout())))\n                    .collect();\n\n                // 0-arity tuple is a unit\n                if elements.is_empty() {\n                    Layout::Primitive(PrimitiveLayout::Unit(UnitLayout))\n                } else {\n                    Layout::Primitive(PrimitiveLayout::Tuple(TupleLayout {\n                        elements,\n                        size: 0, // Would need to calculate from DWARF\n                    }))\n                }\n            }\n            Type::DynTrait(_dyn_trait) => {\n                // For trait objects, we'll use Other for now\n                Layout::Alias {\n                    name: self.to_string(),\n                }\n            }\n            Type::Function(fn_type) => {\n                Layout::Primitive(PrimitiveLayout::Function(FunctionLayout {\n                    return_type: fn_type\n                        .ret()\n                        .map(|l| TypeDefinition::new((), l.as_layout())),\n                    arg_types: fn_type\n                        .args()\n                        .iter()\n                        .map(|a| TypeDefinition::new((), a.as_layout()))\n                        .collect(),\n                }))\n            }\n            Type::Never(_) => {\n                // For the never type, we can just return a unit type\n                Layout::Primitive(PrimitiveLayout::Never(()))\n            }\n        }\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Type",
+          "traitName": null
+        },
+        {
+          "type": "impl",
+          "name": "Path",
+          "visibility": "private",
+          "location": {
+            "startLine": 280,
+            "startColumn": 2,
+            "endLine": 280,
+            "endColumn": 2,
+            "startByte": 16392,
+            "endByte": 29867
+          },
+          "sourceCode": "impl Path {\n    fn as_typedef(&self) -> Layout {\n        // First, let's extract the segments\n        let segments = self.segments();\n        if segments.is_empty() {\n            return Layout::Alias {\n                name: String::new(),\n            };\n        }\n\n        // Get the last segment as the base type name\n        let last_segment = segments.last().unwrap();\n\n        // Check if this is a primitive type\n        if segments.len() == 1 {\n            match last_segment.as_str() {\n                \"u8\" => {\n                    return UnsignedIntLayout { size: 1 }.into();\n                }\n                \"u16\" => {\n                    return UnsignedIntLayout { size: 2 }.into();\n                }\n                \"u32\" => {\n                    return UnsignedIntLayout { size: 4 }.into();\n                }\n                \"u64\" => {\n                    return UnsignedIntLayout { size: 8 }.into();\n                }\n                \"u128\" => {\n                    return UnsignedIntLayout { size: 16 }.into();\n                }\n                \"usize\" => {\n                    return UnsignedIntLayout {\n                        size: std::mem::size_of::<usize>(),\n                    }\n                    .into();\n                }\n                \"i8\" => return IntLayout { size: 1 }.into(),\n                \"i16\" => return IntLayout { size: 2 }.into(),\n                \"i32\" => return IntLayout { size: 4 }.into(),\n                \"i64\" => return IntLayout { size: 8 }.into(),\n                \"i128\" => return IntLayout { size: 16 }.into(),\n                \"isize\" => {\n                    return IntLayout {\n                        size: std::mem::size_of::<isize>(),\n                    }\n                    .into();\n                }\n                \"f32\" => return FloatLayout { size: 4 }.into(),\n                \"f64\" => return FloatLayout { size: 8 }.into(),\n                \"bool\" => return Layout::Primitive(PrimitiveLayout::Bool(())),\n                \"char\" => return Layout::Primitive(PrimitiveLayout::Char(())),\n                \"str\" => return Layout::Primitive(PrimitiveLayout::Str(())),\n                \"()\" => return Layout::Primitive(PrimitiveLayout::Unit(UnitLayout)),\n                _ => {}\n            }\n        }\n\n        // Check if this is a standard library type by examining the path\n        let is_std = segments[0] == \"std\" || segments[0] == \"core\" || segments[0] == \"alloc\";\n        let is_hashbrown = segments[0] == \"hashbrown\";\n\n        tracing::trace!(\"Parser segments: {:?}, is_std: {}\", segments, is_std);\n\n        if is_std || is_hashbrown || segments.len() == 1 {\n            // Parse the last segment for generic types\n            // (we're guaranteed to have at least one segment here)\n            if let Some(path_segment) = self.segments.0.last() {\n                if let PathSegment::Segment(segment) = &path_segment.value {\n                    let type_name = segment.ident.to_string();\n\n                    let get_generics =\n                        || {\n                            segment.generics.0.first().map_or_else(\n                                std::vec::Vec::new,\n                                |generic_args| match &generic_args.value {\n                                    GenericArgs::Parsed { inner, .. } => {\n                                        inner.0.iter().map(|d| d.value.clone()).collect()\n                                    }\n                                    GenericArgs::Unparsed(_) => vec![],\n                                },\n                            )\n                        };\n\n                    tracing::trace!(\"Checking std type: '{}' against known types\", type_name);\n\n                    match type_name.as_str() {\n                        \"String\" => {\n                            tracing::trace!(\"Matched String type!\");\n                            return Layout::Std(StdLayout::String(StringLayout(VecLayout {\n                                length_offset: 0,\n                                data_ptr_offset: 0,\n                                capacity_offset: 0,\n                                inner_type: TypeDefinition::new(\n                                    (),\n                                    Layout::Primitive(PrimitiveLayout::UnsignedInt(\n                                        UnsignedIntLayout { size: 1 },\n                                    )),\n                                ),\n                            })));\n                        }\n                        \"Vec\" => {\n                            let inner = get_generics()\n                                .first()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            return Layout::Std(StdLayout::Vec(VecLayout {\n                                inner_type: inner,\n                                length_offset: 0,\n                                data_ptr_offset: 0,\n                                capacity_offset: 0,\n                            }));\n                        }\n                        \"Option\" => {\n                            let inner = get_generics()\n                                .first()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            return Layout::Std(StdLayout::Option(OptionLayout {\n                                name: \"Option\".to_string(),\n                                discriminant: Discriminant {\n                                    offset: 0,\n                                    ty: DiscriminantType::Implicit,\n                                },\n                                some_offset: 0,\n                                some_type: inner,\n                                size: 0,\n                            }));\n                        }\n                        \"Result\" => {\n                            let mut generics_iter = get_generics().into_iter();\n                            let ok_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let err_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            return Layout::Std(StdLayout::Result(ResultLayout {\n                                name: \"Result\".to_string(),\n                                discriminant: Discriminant {\n                                    offset: 0,\n                                    ty: DiscriminantType::Implicit,\n                                },\n                                ok_type,\n                                ok_offset: 0,\n                                err_type,\n                                err_offset: 0,\n                                size: 0,\n                            }));\n                        }\n                        \"HashMap\" | \"BTreeMap\" => {\n                            let mut generics_iter = get_generics().into_iter();\n                            let key_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let value_type = generics_iter\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let variant = match type_name.as_str() {\n                                \"HashMap\" => MapVariant::HashMap {\n                                    bucket_mask_offset: 0,\n                                    ctrl_offset: 0,\n                                    items_offset: 0,\n                                    pair_size: 0,\n                                    key_offset: 0,\n                                    value_offset: 0,\n                                },\n                                \"BTreeMap\" => MapVariant::BTreeMap {\n                                    length_offset: 0,\n                                    root_offset: 0,\n                                    root_layout: BTreeRootLayout {\n                                        node_offset: 0,\n                                        height_offset: 0,\n                                    },\n                                    node_layout: BTreeNodeLayout {\n                                        keys_offset: 0,\n                                        vals_offset: 0,\n                                        len_offset: 0,\n                                        edges_offset: 0,\n                                    },\n                                },\n                                _ => unreachable!(),\n                            };\n                            tracing::trace!(\"Matched Map type: '{type_name}'\");\n                            return Layout::Std(StdLayout::Map(MapLayout {\n                                key_type,\n                                value_type,\n                                variant,\n                            }));\n                        }\n                        \"Box\" | \"Rc\" | \"Arc\" | \"Cell\" | \"RefCell\" | \"UnsafeCell\" | \"Mutex\"\n                        | \"RwLock\" => {\n                            let inner = get_generics()\n                                .into_iter()\n                                .next()\n                                .map(|t| TypeDefinition::new((), t.as_layout()))\n                                .unwrap_or_else(|| {\n                                    TypeDefinition::new(\n                                        (),\n                                        Layout::Alias {\n                                            name: \"Unknown\".to_string(),\n                                        },\n                                    )\n                                });\n                            let variant = match type_name.as_str() {\n                                \"Box\" => SmartPtrVariant::Box,\n                                \"Rc\" => SmartPtrVariant::Rc,\n                                \"Arc\" => SmartPtrVariant::Arc,\n                                \"Cell\" => SmartPtrVariant::Cell,\n                                \"RefCell\" => SmartPtrVariant::RefCell,\n                                \"UnsafeCell\" => SmartPtrVariant::UnsafeCell,\n                                \"Mutex\" => SmartPtrVariant::Mutex,\n                                \"RwLock\" => SmartPtrVariant::RwLock,\n                                _ => unreachable!(),\n                            };\n                            return Layout::Std(StdLayout::SmartPtr(SmartPtrLayout {\n                                inner_type: inner,\n                                inner_ptr_offset: 0,\n                                data_ptr_offset: 0,\n                                variant,\n                            }));\n                        }\n                        _ => {}\n                    }\n                }\n            }\n        }\n\n        // Default case: treat as a custom type (struct/enum) or alias\n        Layout::Alias {\n            name: last_segment.clone(),\n        }\n    }\n}",
+          "attributes": [],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": "Path",
+          "traitName": null
+        },
+        {
+          "type": "mod",
+          "name": "test",
+          "visibility": "private",
+          "location": {
+            "startLine": 393,
+            "startColumn": 2,
+            "endLine": 393,
+            "endColumn": 2,
+            "startByte": 29869,
+            "endByte": 43490
+          },
+          "sourceCode": "#[cfg(test)]\nmod test {\n    use itertools::Itertools;\n    use pretty_assertions::assert_eq;\n    use rudy_types::*;\n\n    use super::*;\n\n    #[track_caller]\n    fn parse_symbol(s: &str) -> ParsedSymbol {\n        match super::parse_symbol(s) {\n            Ok(s) => s,\n            Err(e) => {\n                panic!(\n                    \"Failed to parse symbol `{s}`: {e}\\nTokens:\\n{}\",\n                    s.to_token_iter().map(|t| format!(\"{t:?}\")).join(\"\\n\")\n                );\n            }\n        }\n    }\n\n    #[track_caller]\n    fn parse_type(s: &str) -> Type {\n        match super::parse_type(s) {\n            Ok(p) => p,\n            Err(e) => {\n                panic!(\n                    \"Failed to parse type `{s}`: {e}\\nTokens:\\n{}\",\n                    s.to_token_iter().map(|t| format!(\"{t:?}\")).join(\"\\n\")\n                );\n            }\n        }\n    }\n\n    #[allow(unused)]\n    #[track_caller]\n    fn parse_arbitrary<T>(s: &str) -> T\n    where\n        T: Parse,\n    {\n        let mut iter = s.to_token_iter();\n        match Cons::<T, EndOfStream>::parse(&mut iter) {\n            Ok(t) => t.first,\n            Err(e) => {\n                panic!(\n                    \"Failed to parse `{s}` as {}: {e}\\nTokens:\\n{}\",\n                    std::any::type_name::<T>(),\n                    s.to_token_iter().map(|t| format!(\"{t:?}\")).join(\"\\n\")\n                );\n            }\n        }\n    }\n\n    #[test]\n    fn test_symbol_parsing() {\n        parse_symbol(\"u8\");\n        let mut iter = \"<impl foo as bar>\".to_token_iter();\n        AngleTokenTree::parse(&mut iter).unwrap();\n        // let mut iter = \"NonZero<u8>\".to_token_iter();\n        // Cons::<Ident, BracketGroupContaining<Path>>::parse(&mut iter).unwrap();\n        parse_symbol(\"NonZero\");\n        parse_symbol(\"NonZero<u8>\");\n        parse_symbol(\"core::num::nonzero::NonZero\");\n        parse_symbol(\"core::num::nonzero::NonZero<u8>\");\n        parse_symbol(\"core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858\");\n        parse_symbol(\n            \"drop_in_place<std::backtrace_rs::symbolize::gimli::parse_running_mmaps::MapsEntry>\",\n        );\n        parse_symbol(\n            \"alloc::ffi::c_str::<\n                impl\n                core::convert::From<\n                    &core::ffi::c_str::CStr\n                >\n                for\n                alloc::boxed::Box<\n                    core::ffi::c_str::CStr\n                >\n            >::from::hec874816052de6db\",\n        );\n\n        assert_eq!(\n            parse_symbol(\n                \"alloc::ffi::c_str::<\n                    impl\n                    core::convert::From<\n                        &core::ffi::c_str::CStr\n                    >\n                    for\n                    alloc::boxed::Box<\n                        core::ffi::c_str::CStr\n                    >\n                >::from::hec874816052de6db\"\n            )\n            ,\n            (\n                vec![\n                    \"alloc\".to_string(),\n                    \"ffi\".to_string(),\n                    \"c_str\".to_string(),\n                    \"< impl core::convert::From< &core::ffi::c_str::CStr > for alloc::boxed::Box< core::ffi::c_str::CStr > >\".to_string(),\n                ],\n                \"from\".to_string(),\n                Some(\"hec874816052de6db\".to_string())\n            )\n        );\n        parse_symbol(\"core::ops::function::FnOnce::call_once{{vtable.shim}}::h7689c9dccb951788\");\n\n        // other cases\n        parse_symbol(\"_Unwind_SetIP@GCC_3.0\");\n        parse_symbol(\"__rustc[95feac21a9532783]::__rust_alloc_zeroed\");\n    }\n\n    #[test]\n    fn test_type_parsing() {\n        parse_type(\"u8\");\n        parse_type(\"&u8\");\n        parse_type(\"dyn core::fmt::Debug\");\n        parse_type(\"dyn core::fmt::Debug + core::fmt::Display\");\n        parse_type(\"&mut dyn core::fmt::Write\");\n        parse_type(\"&[core::fmt::rt::Argument]\");\n        parse_type(\"<&alloc::string::String as core::fmt::Debug>::{vtable_type}\");\n        parse_type(\"(usize, core::option::Option<usize>)\");\n        parse_type(\"*const [i32]\");\n        parse_type(\"&mut dyn core::ops::function::FnMut<(usize), Output=bool>\");\n        parse_type(\"&&i32\");\n        parse_type(\"!\");\n    }\n\n    #[test]\n    fn test_type_printing() {\n        let s = \"hashbrown::map::HashMap<alloc::string::String, i32, std::hash::random::RandomState, alloc::alloc::Global>\";\n        assert_eq!(parse_type(s).to_string(), s.to_string());\n    }\n\n    #[track_caller]\n    fn infer<T: Into<Layout> + fmt::Debug>(s: &str, expected: T) {\n        let ty = parse_type(s).as_layout();\n        assert_eq!(ty, expected.into(), \"Failed to parse type `{s}`\");\n    }\n\n    fn string_def() -> TypeDefinition {\n        TypeDefinition::new(\n            (),\n            Layout::Std(StdLayout::String(StringLayout(VecLayout {\n                length_offset: 0,\n                data_ptr_offset: 0,\n                capacity_offset: 0,\n                inner_type: TypeDefinition::new(\n                    (),\n                    Layout::Primitive(PrimitiveLayout::UnsignedInt(UnsignedIntLayout { size: 1 })),\n                ),\n            }))),\n        )\n    }\n\n    #[test]\n    fn test_type_inference() {\n        let _ = tracing_subscriber::fmt()\n            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())\n            .try_init();\n\n        infer(\"u8\", UnsignedIntLayout::u8());\n        infer(\"u32\", UnsignedIntLayout::u32());\n        infer(\"()\", PrimitiveLayout::from(UnitLayout));\n        infer(\n            \"(u8,)\",\n            PrimitiveLayout::Tuple(TupleLayout {\n                elements: vec![(0, TypeDefinition::new((), UnsignedIntLayout::u8().into()))],\n                size: 0, // Would need to calculate from DWARF\n            }),\n        );\n        infer(\n            \"(u8,u64)\",\n            PrimitiveLayout::Tuple(TupleLayout {\n                elements: vec![\n                    (0, TypeDefinition::new((), UnsignedIntLayout::u8().into())),\n                    (0, TypeDefinition::new((), UnsignedIntLayout::u64().into())),\n                ],\n                size: 0, // Would need to calculate from DWARF\n            }),\n        );\n        infer(\n            \"&u8\",\n            ReferenceLayout::new_immutable(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"&mut u8\",\n            ReferenceLayout::new_mutable(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"dyn core::fmt::Debug\",\n            Layout::Alias {\n                name: \"dyn core::fmt::Debug\".to_string(),\n            },\n        );\n        infer(\n            \"alloc::vec::Vec<u8>\",\n            VecLayout::new(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"alloc::vec::Vec<alloc::vec::Vec<u8>>\",\n            VecLayout::new(VecLayout::new(UnsignedIntLayout::u8())),\n        );\n        infer(\n            \"alloc::vec::Vec<u8, alloc::alloc::Global>\",\n            VecLayout::new(UnsignedIntLayout::u8()),\n        );\n        infer(\n            \"core::option::Option<i32>\",\n            StdLayout::Option(OptionLayout {\n                name: \"Option\".to_string(),\n                discriminant: Discriminant {\n                    offset: 0,\n                    ty: DiscriminantType::Implicit,\n                },\n                some_offset: 0,\n                some_type: TypeDefinition::new((), IntLayout::i32().into()),\n                size: 0,\n            }),\n        );\n        infer(\n            \"alloc::boxed::Box<i32>\",\n            SmartPtrLayout {\n                inner_type: TypeDefinition::new((), IntLayout::i32().into()),\n                variant: SmartPtrVariant::Box,\n                inner_ptr_offset: 0,\n                data_ptr_offset: 0,\n            },\n        );\n        infer(\n            \"alloc::String::String\",\n            string_def().layout.as_ref().clone(),\n        );\n        infer(\n            \"std::collections::hash::map::HashMap<alloc::string::String, alloc::string::String>\",\n            MapLayout {\n                key_type: string_def(),\n                value_type: string_def(),\n                variant: MapVariant::HashMap {\n                    bucket_mask_offset: 0,\n                    ctrl_offset: 0,\n                    items_offset: 0,\n                    pair_size: 0,\n                    key_offset: 0,\n                    value_offset: 0,\n                },\n            },\n        );\n\n        infer(\n            \"core::num::nonzero::NonZero<u8>\",\n            Layout::Alias {\n                name: \"NonZero<u8>\".to_string(),\n            },\n        );\n\n        infer(\n            \"fn(&u64, &mut core::fmt::Formatter) -> core::result::Result<(), core::fmt::Error>\",\n            Layout::Primitive(PrimitiveLayout::Function(FunctionLayout {\n                arg_types: vec![\n                    TypeDefinition::new(\n                        (),\n                        ReferenceLayout::new_immutable(UnsignedIntLayout::u64()).into(),\n                    ),\n                    TypeDefinition::new(\n                        (),\n                        ReferenceLayout::new_mutable(Layout::Alias {\n                            name: \"Formatter\".to_string(),\n                        })\n                        .into(),\n                    ),\n                ],\n                return_type: Some(TypeDefinition::new(\n                    (),\n                    StdLayout::Result(ResultLayout {\n                        name: \"Result\".to_string(),\n                        discriminant: Discriminant {\n                            offset: 0,\n                            ty: DiscriminantType::Implicit,\n                        },\n                        ok_type: TypeDefinition::new(\n                            (),\n                            Layout::Primitive(PrimitiveLayout::Unit(UnitLayout)),\n                        ),\n                        ok_offset: 0,\n                        err_type: TypeDefinition::new(\n                            (),\n                            Layout::Alias {\n                                name: \"Error\".to_string(),\n                            },\n                        ),\n                        err_offset: 0,\n                        size: 0,\n                    })\n                    .into(),\n                )),\n            })),\n        );\n        infer(\n            \"&[u8]\",\n            Layout::Primitive(PrimitiveLayout::Slice(SliceLayout {\n                element_type: TypeDefinition::new((), UnsignedIntLayout::u8().into()),\n                data_ptr_offset: 0,\n                length_offset: 0,\n            })),\n        );\n        infer(\n            \"&str\",\n            Layout::Primitive(PrimitiveLayout::StrSlice(StrSliceLayout {\n                data_ptr_offset: 0,\n                length_offset: 0,\n            })),\n        )\n    }\n\n    #[test]\n    fn test_symbol_parsing_basic() {\n        // Test basic function without generics\n        let (module_path, function_name, hash) = parse_symbol(\"core::num::ilog2::h12345\");\n        assert_eq!(module_path, vec![\"core\", \"num\"]);\n        assert_eq!(function_name, \"ilog2\");\n        assert_eq!(hash, Some(\"h12345\".to_string()));\n\n        // Test function with generics in module path\n        let (module_path, function_name, hash) =\n            parse_symbol(\"core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858\");\n        assert_eq!(module_path, vec![\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]);\n        assert_eq!(function_name, \"ilog2\");\n        assert_eq!(hash, Some(\"hc1106854ed63a858\".to_string()));\n\n        // Test function without hash\n        let (module_path, function_name, hash) =\n            parse_symbol(\"std::collections::HashMap<String, i32>::insert\");\n        assert_eq!(\n            module_path,\n            vec![\"std\", \"collections\", \"HashMap<String, i32>\"]\n        );\n        assert_eq!(function_name, \"insert\");\n        assert_eq!(hash, None);\n\n        // Test nested generics\n        let (module_path, function_name, hash) =\n            parse_symbol(\"std::collections::HashMap<String, Vec<i32>>::get\");\n        assert_eq!(\n            module_path,\n            vec![\"std\", \"collections\", \"HashMap<String, Vec<i32>>\"]\n        );\n        assert_eq!(function_name, \"get\");\n        assert_eq!(hash, None);\n\n        // Test single segment (just function name)\n        let (module_path, function_name, hash) = parse_symbol(\"main\");\n        assert_eq!(module_path, Vec::<String>::new());\n        assert_eq!(function_name, \"main\");\n        assert_eq!(hash, None);\n\n        // Test single segment with hash\n        let (module_path, function_name, hash) = parse_symbol(\"main::h123abc\");\n        assert_eq!(module_path, Vec::<String>::new());\n        assert_eq!(function_name, \"main\");\n        assert_eq!(hash, Some(\"h123abc\".to_string()));\n    }\n\n    #[test]\n    fn test_symbol_parsing_complex_cases() {\n        // Test from the original parser tests\n        let (module_path, function_name, hash) = parse_symbol(\n            \"alloc::ffi::c_str::<impl core::convert::From<&core::ffi::c_str::CStr> for alloc::boxed::Box<core::ffi::c_str::CStr>>::from::hec874816052de6db\",\n        );\n\n        assert_eq!(\n            module_path,\n            vec![\n                \"alloc\",\n                \"ffi\",\n                \"c_str\",\n                \"<impl core::convert::From<&core::ffi::c_str::CStr> for alloc::boxed::Box<core::ffi::c_str::CStr>>\"\n            ]\n        );\n        assert_eq!(function_name, \"from\");\n        assert_eq!(hash, Some(\"hec874816052de6db\".to_string()));\n    }\n\n    #[test]\n    fn test_symbol_parsing_errors() {\n        // Test empty string\n        assert!(super::parse_symbol(\"\").is_err());\n\n        // Test only hash\n        assert!(super::parse_symbol(\"h123abc\").is_err());\n    }\n}",
+          "attributes": [
+            "#[cfg(test)]"
+          ],
+          "genericParameters": [],
+          "parameters": null,
+          "returnType": null,
+          "fields": null,
+          "variants": null,
+          "implType": null,
+          "traitName": null
+        }
+      ],
+      "location": {
+        "startLine": 1,
+        "startColumn": 1,
+        "endLine": 1224,
+        "endColumn": 1,
+        "startByte": 0,
+        "endByte": 43491
+      }
+    }
+  },
+  "errors": []
+}
