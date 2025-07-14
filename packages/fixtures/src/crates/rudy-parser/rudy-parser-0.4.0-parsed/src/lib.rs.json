@@ -12,14 +12,10 @@
             "name": "expressions",
             "fullCode": "pub mod expressions;",
             "docComment": null,
-            "location": {
-              "startLine": 1,
-              "startColumn": 21,
-              "endLine": 1,
-              "endColumn": 21,
-              "startByte": 252,
-              "endByte": 272
-            },
+            "location": [
+              252,
+              272
+            ],
             "details": {
               "module": {
                 "items": []
@@ -30,14 +26,10 @@
             "name": "types",
             "fullCode": "pub mod types;",
             "docComment": null,
-            "location": {
-              "startLine": 1,
-              "startColumn": 15,
-              "endLine": 1,
-              "endColumn": 15,
-              "startByte": 273,
-              "endByte": 287
-            },
+            "location": [
+              273,
+              287
+            ],
             "details": {
               "module": {
                 "items": []
@@ -48,14 +40,10 @@
             "name": "expressions::{Expression, parse_expression}",
             "fullCode": "pub use expressions::{Expression, parse_expression};",
             "docComment": null,
-            "location": {
-              "startLine": 1,
-              "startColumn": 53,
-              "endLine": 1,
-              "endColumn": 53,
-              "startByte": 289,
-              "endByte": 341
-            },
+            "location": [
+              289,
+              341
+            ],
             "details": {
               "other": {
                 "itemType": "use"
@@ -66,14 +54,10 @@
             "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
             "fullCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
             "docComment": null,
-            "location": {
-              "startLine": 1,
-              "startColumn": 69,
-              "endLine": 1,
-              "endColumn": 69,
-              "startByte": 342,
-              "endByte": 410
-            },
+            "location": [
+              342,
+              410
+            ],
             "details": {
               "other": {
                 "itemType": "use"
@@ -81,14 +65,10 @@
             }
           }
         ],
-        "location": {
-          "startLine": 1,
-          "startColumn": 1,
-          "endLine": 12,
-          "endColumn": 1,
-          "startByte": 0,
-          "endByte": 411
-        }
+        "location": [
+          0,
+          411
+        ]
       }
     ],
     "rootModule": {
@@ -99,14 +79,10 @@
           "name": "expressions",
           "fullCode": "pub mod expressions;",
           "docComment": null,
-          "location": {
-            "startLine": 1,
-            "startColumn": 21,
-            "endLine": 1,
-            "endColumn": 21,
-            "startByte": 252,
-            "endByte": 272
-          },
+          "location": [
+            252,
+            272
+          ],
           "details": {
             "module": {
               "items": []
@@ -117,14 +93,10 @@
           "name": "types",
           "fullCode": "pub mod types;",
           "docComment": null,
-          "location": {
-            "startLine": 1,
-            "startColumn": 15,
-            "endLine": 1,
-            "endColumn": 15,
-            "startByte": 273,
-            "endByte": 287
-          },
+          "location": [
+            273,
+            287
+          ],
           "details": {
             "module": {
               "items": []
@@ -135,14 +107,10 @@
           "name": "expressions::{Expression, parse_expression}",
           "fullCode": "pub use expressions::{Expression, parse_expression};",
           "docComment": null,
-          "location": {
-            "startLine": 1,
-            "startColumn": 53,
-            "endLine": 1,
-            "endColumn": 53,
-            "startByte": 289,
-            "endByte": 341
-          },
+          "location": [
+            289,
+            341
+          ],
           "details": {
             "other": {
               "itemType": "use"
@@ -153,14 +121,10 @@
           "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
           "fullCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
           "docComment": null,
-          "location": {
-            "startLine": 1,
-            "startColumn": 69,
-            "endLine": 1,
-            "endColumn": 69,
-            "startByte": 342,
-            "endByte": 410
-          },
+          "location": [
+            342,
+            410
+          ],
           "details": {
             "other": {
               "itemType": "use"
@@ -168,14 +132,10 @@
           }
         }
       ],
-      "location": {
-        "startLine": 1,
-        "startColumn": 1,
-        "endLine": 12,
-        "endColumn": 1,
-        "startByte": 0,
-        "endByte": 411
-      }
+      "location": [
+        0,
+        411
+      ]
     }
   },
   "errors": []

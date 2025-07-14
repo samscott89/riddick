@@ -38,7 +38,7 @@ pub struct ModuleInfo {
     pub name: String,
     pub path: String,
     pub items: Vec<ItemInfo>,
-    pub location: SourceLocation,
+    pub location: [u32; 2], // [start_byte, end_byte]
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -48,7 +48,7 @@ pub struct ItemInfo {
     pub name: String,
     pub full_code: String,
     pub doc_comment: Option<String>,
-    pub location: SourceLocation,
+    pub location: [u32; 2], // [start_byte, end_byte]
     pub details: ItemDetails,
 }
 
@@ -105,21 +105,11 @@ pub struct TraitMethodInfo {
     pub name: String,
     pub signature: String,
     pub doc_comment: Option<String>,
-    pub location: SourceLocation,
+    pub location: [u32; 2], // [start_byte, end_byte]
 }
 
 
-#[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct SourceLocation {
-    pub start_line: u32,
-    pub start_column: u32,
-    pub end_line: u32,
-    pub end_column: u32,
-    pub start_byte: u32,
-    pub end_byte: u32,
-}
+// Removed SourceLocation struct - using [u32; 2] for byte offsets
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
@@ -127,7 +117,7 @@ pub struct SourceLocation {
 pub struct ParseError {
     pub message: String,
     pub severity: String,
-    pub location: Option<SourceLocation>,
+    pub location: Option<[u32; 2]>, // [start_byte, end_byte]
 }
 
 pub fn parse_rust_code(code: &str) -> Result<ParseResponse, String> {
@@ -196,7 +186,7 @@ fn extract_module_info(source_file: &SourceFile, name: &str, path: &str, full_so
     }
 
     let syntax = source_file.syntax();
-    let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
+    let location = text_range_to_byte_offsets(syntax.text_range());
 
     ModuleInfo {
         name: name.to_string(),
@@ -259,7 +249,7 @@ fn collect_modules_recursive(source_file: &SourceFile, parent_path: &str, module
                         }
                         
                         let syntax = module.syntax();
-                        let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
+                        let location = text_range_to_byte_offsets(syntax.text_range());
                         
                         modules.push(ModuleInfo {
                             name: module_name,
@@ -307,7 +297,7 @@ fn collect_module_items_recursive(item_list: &ast::ItemList, parent_path: &str, 
                         }
                         
                         let syntax = module.syntax();
-                        let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
+                        let location = text_range_to_byte_offsets(syntax.text_range());
                         
                         modules.push(ModuleInfo {
                             name: module_name.clone(),
@@ -339,7 +329,7 @@ fn extract_function_info(func: ast::Fn, full_source: &str) -> Option<ItemInfo> {
     let name = func.name()?.text().to_string();
     let syntax = func.syntax();
     let full_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let location = text_range_to_byte_offsets(syntax.text_range());
     let doc_comment = extract_doc_comment(syntax, full_source);
     
     // Extract function signature (everything before the body)
@@ -366,7 +356,7 @@ fn extract_struct_info(s: ast::Struct, full_source: &str) -> Option<ItemInfo> {
     let name = s.name()?.text().to_string();
     let syntax = s.syntax();
     let full_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let location = text_range_to_byte_offsets(syntax.text_range());
     let doc_comment = extract_doc_comment(syntax, full_source);
     
     // Find impl blocks for this struct in the source file
@@ -384,7 +374,7 @@ fn extract_struct_info(s: ast::Struct, full_source: &str) -> Option<ItemInfo> {
 fn extract_other_item_info(item: ast::Item, full_source: &str) -> Option<ItemInfo> {
     let syntax = item.syntax();
     let full_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let location = text_range_to_byte_offsets(syntax.text_range());
     let doc_comment = extract_doc_comment(syntax, full_source);
     
     let (name, item_type) = match &item {
@@ -422,7 +412,7 @@ fn extract_trait_methods(trait_item: &ast::Trait, full_source: &str) -> Vec<Trai
             if let ast::AssocItem::Fn(func) = item {
                 if let Some(name) = func.name() {
                     let syntax = func.syntax();
-                    let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
+                    let location = text_range_to_byte_offsets(syntax.text_range());
                     let doc_comment = extract_doc_comment(syntax, full_source);
                     
                     // Extract just the signature (everything before the body if it exists)
@@ -502,7 +492,7 @@ fn extract_trait_info(t: ast::Trait, full_source: &str) -> Option<ItemInfo> {
     let name = t.name()?.text().to_string();
     let syntax = t.syntax();
     let full_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let location = text_range_to_byte_offsets(syntax.text_range());
     let doc_comment = extract_doc_comment(syntax, full_source);
     
     // Extract trait methods
@@ -523,7 +513,7 @@ fn extract_module_item_info(m: ast::Module, full_source: &str) -> Option<ItemInf
     let name = m.name()?.text().to_string();
     let syntax = m.syntax();
     let full_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let location = text_range_to_byte_offsets(syntax.text_range());
     let doc_comment = extract_doc_comment(syntax, full_source);
     
     // Extract nested items from the module
@@ -561,41 +551,8 @@ fn extract_module_item_info(m: ast::Module, full_source: &str) -> Option<ItemInf
 
 // Removed old attribute extraction function
 
-fn text_range_to_location(range: TextRange, source: &str) -> SourceLocation {
-    let start = range.start().into();
-    let end = range.end().into();
-
-    // Calculate line and column numbers
-    let (start_line, start_column) = offset_to_line_col(source, start);
-    let (end_line, end_column) = offset_to_line_col(source, end);
-
-    SourceLocation {
-        start_line,
-        start_column,
-        end_line,
-        end_column,
-        start_byte: start,
-        end_byte: end,
-    }
-}
-
-fn offset_to_line_col(source: &str, offset: u32) -> (u32, u32) {
-    let mut line = 1;
-    let mut col = 1;
-
-    for (i, ch) in source.char_indices() {
-        if i as u32 >= offset {
-            break;
-        }
-        if ch == '\n' {
-            line += 1;
-            col = 1;
-        } else {
-            col += 1;
-        }
-    }
-
-    (line, col)
+fn text_range_to_byte_offsets(range: TextRange) -> [u32; 2] {
+    [range.start().into(), range.end().into()]
 }
 
 fn extract_doc_comment(syntax: &ra_ap_syntax::SyntaxNode, full_source: &str) -> Option<String> {
