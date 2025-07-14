@@ -1,6 +1,6 @@
 use ra_ap_syntax::{
-    ast::{self, HasModuleItem, HasName, HasVisibility},
-    AstNode, SourceFile, TextRange,
+    ast::{self, HasDocComments, HasModuleItem, HasName, HasVisibility},
+    AstNode, AstToken, SourceFile, TextRange,
 };
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -11,7 +11,7 @@ use ts_rs::TS;
 pub struct ParseRequest {
     pub code: String,
     pub file_path: Option<String>, // Optional file path for context
-    pub include_private: bool, // Whether to include private items
+    pub include_private: bool,     // Whether to include private items
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -40,7 +40,7 @@ pub struct ModuleInfo {
     pub items: Vec<ItemInfo>, // Non-module items (functions, structs, etc.)
     pub inline_modules: Vec<ModuleInfo>, // Nested inline modules
     pub module_references: Vec<ModuleReference>, // Referenced modules
-    pub location: [u32; 2], // [start_byte, end_byte] in the file
+    pub location: [u32; 2],   // [start_byte, end_byte] in the file
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -48,9 +48,9 @@ pub struct ModuleInfo {
 #[serde(rename_all = "camelCase")]
 pub struct ModuleReference {
     pub name: String,
-    pub visibility: String, // "pub", "pub(crate)", "private", etc.
+    pub visibility: String,          // "pub", "pub(crate)", "private", etc.
     pub expected_paths: Vec<String>, // Potential file paths (foo.rs, foo/mod.rs)
-    pub location: [u32; 2], // [start_byte, end_byte] in the file
+    pub location: [u32; 2],          // [start_byte, end_byte] in the file
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -70,7 +70,7 @@ pub struct ItemInfo {
 #[serde(rename_all = "camelCase")]
 pub enum ItemDetails {
     Function(FunctionDetails),
-    Struct(StructDetails),
+    Adt(AdtDetails), // Algebraic Data Type (struct, enum, union)
     Trait(TraitDetails),
     Module(ModuleDetails),
     Other(OtherDetails),
@@ -86,8 +86,9 @@ pub struct FunctionDetails {
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct StructDetails {
-    pub methods: Vec<ItemInfo>,
+pub struct AdtDetails {
+    pub adt_type: String, // "struct", "enum", "union"
+    pub methods: Vec<ItemInfo>, // Methods from impl blocks
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -121,7 +122,6 @@ pub struct TraitMethodInfo {
     pub doc_comment: Option<String>,
     pub location: [u32; 2], // [start_byte, end_byte]
 }
-
 
 // Removed SourceLocation struct - using [u32; 2] for byte offsets
 
@@ -164,7 +164,11 @@ pub fn parse_rust_code(code: &str, include_private: bool) -> Result<ParseRespons
     })
 }
 
-fn extract_file_info(source_file: &SourceFile, full_source: &str, include_private: bool) -> FileInfo {
+fn extract_file_info(
+    source_file: &SourceFile,
+    full_source: &str,
+    include_private: bool,
+) -> FileInfo {
     let mut items = Vec::new();
     let mut module_references = Vec::new();
 
@@ -175,10 +179,12 @@ fn extract_file_info(source_file: &SourceFile, full_source: &str, include_privat
                     if let Some(name) = module.name() {
                         let module_name = name.text().to_string();
                         let location = text_range_to_byte_offsets(module.syntax().text_range());
-                        
+
                         if module.item_list().is_some() {
                             // Inline module: mod foo { ... } - treat as regular item
-                            if let Some(item_info) = extract_item_info(item.clone(), full_source, include_private) {
+                            if let Some(item_info) =
+                                extract_item_info(item.clone(), full_source, include_private)
+                            {
                                 items.push(item_info);
                             }
                         } else {
@@ -187,7 +193,7 @@ fn extract_file_info(source_file: &SourceFile, full_source: &str, include_privat
                                 format!("{}.rs", module_name),
                                 format!("{}/mod.rs", module_name),
                             ];
-                            
+
                             module_references.push(ModuleReference {
                                 name: module_name,
                                 visibility: extract_visibility(module.visibility()),
@@ -197,11 +203,13 @@ fn extract_file_info(source_file: &SourceFile, full_source: &str, include_privat
                         }
                     }
                 }
-            },
+            }
             _ => {
                 // Check visibility before including item
                 if should_include_item(get_item_visibility(&item), include_private) {
-                    if let Some(item_info) = extract_item_info(item.clone(), full_source, include_private) {
+                    if let Some(item_info) =
+                        extract_item_info(item.clone(), full_source, include_private)
+                    {
                         items.push(item_info);
                     }
                 }
@@ -215,29 +223,36 @@ fn extract_file_info(source_file: &SourceFile, full_source: &str, include_privat
     }
 }
 
-fn extract_module_info(module: &ast::Module, full_source: &str, include_private: bool) -> Option<ItemInfo> {
+fn extract_module_info(
+    module: &ast::Module,
+    full_source: &str,
+    include_private: bool,
+) -> Option<ItemInfo> {
     let name = module.name()?.text().to_string();
     let syntax = module.syntax();
     let full_code = syntax.text().to_string();
     let location = text_range_to_byte_offsets(syntax.text_range());
-    let doc_comment = extract_doc_comment(syntax, full_source);
+    let doc_comment = extract_doc_comment(module);
     let visibility = extract_visibility(module.visibility());
-    
+
     // Only handle inline modules here (mod foo { ... })
     if let Some(item_list) = module.item_list() {
         let mut items = Vec::new();
         let mut module_references = Vec::new();
-        
+
         for item in item_list.items() {
             match &item {
                 ast::Item::Module(nested_module) => {
                     if should_include_item(nested_module.visibility(), include_private) {
                         if let Some(nested_name) = nested_module.name() {
-                            let nested_location = text_range_to_byte_offsets(nested_module.syntax().text_range());
-                            
+                            let nested_location =
+                                text_range_to_byte_offsets(nested_module.syntax().text_range());
+
                             if nested_module.item_list().is_some() {
                                 // Nested inline module
-                                if let Some(nested_item) = extract_item_info(item.clone(), full_source, include_private) {
+                                if let Some(nested_item) =
+                                    extract_item_info(item.clone(), full_source, include_private)
+                                {
                                     items.push(nested_item);
                                 }
                             } else {
@@ -247,7 +262,7 @@ fn extract_module_info(module: &ast::Module, full_source: &str, include_private:
                                     format!("{}/{}.rs", name, nested_name_str),
                                     format!("{}/{}/mod.rs", name, nested_name_str),
                                 ];
-                                
+
                                 module_references.push(ModuleReference {
                                     name: nested_name_str,
                                     visibility: extract_visibility(nested_module.visibility()),
@@ -257,25 +272,30 @@ fn extract_module_info(module: &ast::Module, full_source: &str, include_private:
                             }
                         }
                     }
-                },
+                }
                 _ => {
                     // Check visibility before including item
                     if should_include_item(get_item_visibility(&item), include_private) {
-                        if let Some(item_info) = extract_item_info(item.clone(), full_source, include_private) {
+                        if let Some(item_info) =
+                            extract_item_info(item.clone(), full_source, include_private)
+                        {
                             items.push(item_info);
                         }
                     }
                 }
             }
         }
-        
+
         Some(ItemInfo {
             name,
             full_code,
             doc_comment,
             visibility,
             location,
-            details: ItemDetails::Module(ModuleDetails { items, module_references }),
+            details: ItemDetails::Module(ModuleDetails {
+                items,
+                module_references,
+            }),
         })
     } else {
         // Module reference (mod foo;) - shouldn't be handled here
@@ -310,23 +330,33 @@ fn get_item_visibility(item: &ast::Item) -> Option<ast::Visibility> {
     }
 }
 
-fn extract_item_info(item: ast::Item, full_source: &str, include_private: bool) -> Option<ItemInfo> {
+fn extract_item_info(
+    item: ast::Item,
+    full_source: &str,
+    include_private: bool,
+) -> Option<ItemInfo> {
     match item {
         ast::Item::Fn(func) => extract_function_info(func, full_source, include_private),
-        ast::Item::Struct(s) => extract_struct_info(s, full_source, include_private),
+        ast::Item::Struct(_) => extract_adt_info(item.clone(), "struct", full_source, include_private),
+        ast::Item::Enum(_) => extract_adt_info(item.clone(), "enum", full_source, include_private),
+        ast::Item::Union(_) => extract_adt_info(item.clone(), "union", full_source, include_private),
         ast::Item::Trait(t) => extract_trait_info(t, full_source, include_private),
         ast::Item::Module(m) => extract_module_info(&m, full_source, include_private),
         other => extract_other_item_info(other, full_source, include_private),
     }
 }
 
-fn extract_function_info(func: ast::Fn, full_source: &str, _include_private: bool) -> Option<ItemInfo> {
+fn extract_function_info(
+    func: ast::Fn,
+    _full_source: &str,
+    _include_private: bool,
+) -> Option<ItemInfo> {
     let name = func.name()?.text().to_string();
     let syntax = func.syntax();
     let full_code = syntax.text().to_string();
     let location = text_range_to_byte_offsets(syntax.text_range());
-    let doc_comment = extract_doc_comment(syntax, full_source);
-    
+    let doc_comment = extract_doc_comment(&func);
+
     // Extract function signature (everything before the body)
     let signature = if let Some(body) = func.body() {
         let body_start = body.syntax().text_range().start();
@@ -348,34 +378,65 @@ fn extract_function_info(func: ast::Fn, full_source: &str, _include_private: boo
     })
 }
 
-fn extract_struct_info(s: ast::Struct, full_source: &str, include_private: bool) -> Option<ItemInfo> {
-    let name = s.name()?.text().to_string();
-    let syntax = s.syntax();
+fn extract_adt_info(
+    item: ast::Item,
+    adt_type: &str,
+    full_source: &str,
+    include_private: bool,
+) -> Option<ItemInfo> {
+    let (name, syntax, doc_comment, visibility) = match &item {
+        ast::Item::Struct(s) => (
+            s.name()?.text().to_string(),
+            s.syntax(),
+            extract_doc_comment(s),
+            extract_visibility(s.visibility()),
+        ),
+        ast::Item::Enum(e) => (
+            e.name()?.text().to_string(),
+            e.syntax(),
+            extract_doc_comment(e),
+            extract_visibility(e.visibility()),
+        ),
+        ast::Item::Union(u) => (
+            u.name()?.text().to_string(),
+            u.syntax(),
+            extract_doc_comment(u),
+            extract_visibility(u.visibility()),
+        ),
+        _ => return None,
+    };
+    
     let full_code = syntax.text().to_string();
     let location = text_range_to_byte_offsets(syntax.text_range());
-    let doc_comment = extract_doc_comment(syntax, full_source);
-    
-    // Find impl blocks for this struct in the source file
-    let methods = extract_struct_methods(&name, full_source, include_private);
+
+    // Find impl blocks for this ADT in the source file
+    let methods = extract_adt_methods(&name, full_source, include_private);
 
     Some(ItemInfo {
         name,
         full_code,
         doc_comment,
-        visibility: extract_visibility(s.visibility()),
+        visibility,
         location,
-        details: ItemDetails::Struct(StructDetails { methods }),
+        details: ItemDetails::Adt(AdtDetails { 
+            adt_type: adt_type.to_string(),
+            methods 
+        }),
     })
 }
 
-fn extract_other_item_info(item: ast::Item, full_source: &str, _include_private: bool) -> Option<ItemInfo> {
+fn extract_other_item_info(
+    item: ast::Item,
+    _full_source: &str,
+    _include_private: bool,
+) -> Option<ItemInfo> {
     let syntax = item.syntax();
     let full_code = syntax.text().to_string();
     let location = text_range_to_byte_offsets(syntax.text_range());
-    let doc_comment = extract_doc_comment(syntax, full_source);
-    
+    let doc_comment = None; // Other items don't implement HasDocComments uniformly
+
     let (name, item_type) = match &item {
-        ast::Item::Enum(e) => (e.name()?.text().to_string(), "enum".to_string()),
+        // Enums are now handled as ADTs
         ast::Item::Use(u) => (u.use_tree()?.syntax().text().to_string(), "use".to_string()),
         ast::Item::Const(c) => (c.name()?.text().to_string(), "const".to_string()),
         ast::Item::Static(s) => (s.name()?.text().to_string(), "static".to_string()),
@@ -391,7 +452,7 @@ fn extract_other_item_info(item: ast::Item, full_source: &str, _include_private:
         }
         _ => ("unknown".to_string(), "unknown".to_string()),
     };
-    
+
     Some(ItemInfo {
         name,
         full_code,
@@ -402,17 +463,17 @@ fn extract_other_item_info(item: ast::Item, full_source: &str, _include_private:
     })
 }
 
-fn extract_trait_methods(trait_item: &ast::Trait, full_source: &str) -> Vec<TraitMethodInfo> {
+fn extract_trait_methods(trait_item: &ast::Trait, _full_source: &str) -> Vec<TraitMethodInfo> {
     let mut methods = Vec::new();
-    
+
     if let Some(assoc_item_list) = trait_item.assoc_item_list() {
         for item in assoc_item_list.assoc_items() {
             if let ast::AssocItem::Fn(func) = item {
                 if let Some(name) = func.name() {
                     let syntax = func.syntax();
                     let location = text_range_to_byte_offsets(syntax.text_range());
-                    let doc_comment = extract_doc_comment(syntax, full_source);
-                    
+                    let doc_comment = extract_doc_comment(&func);
+
                     // Extract just the signature (everything before the body if it exists)
                     let signature = if let Some(body) = func.body() {
                         let body_start = body.syntax().text_range().start();
@@ -423,7 +484,7 @@ fn extract_trait_methods(trait_item: &ast::Trait, full_source: &str) -> Vec<Trai
                     } else {
                         syntax.text().to_string()
                     };
-                    
+
                     methods.push(TraitMethodInfo {
                         name: name.text().to_string(),
                         signature,
@@ -434,28 +495,34 @@ fn extract_trait_methods(trait_item: &ast::Trait, full_source: &str) -> Vec<Trai
             }
         }
     }
-    
+
     methods
 }
 
-fn extract_struct_methods(struct_name: &str, full_source: &str, include_private: bool) -> Vec<ItemInfo> {
+fn extract_adt_methods(
+    adt_name: &str,
+    full_source: &str,
+    include_private: bool,
+) -> Vec<ItemInfo> {
     let mut methods = Vec::new();
-    
+
     // Parse the full source to find impl blocks for this struct
     let parsed = SourceFile::parse(full_source, ra_ap_syntax::Edition::Edition2024);
     let source_file = parsed.tree();
-    
+
     for item in source_file.items() {
         if let ast::Item::Impl(impl_item) = item {
             if let Some(self_ty) = impl_item.self_ty() {
                 let impl_type = self_ty.syntax().text().to_string();
                 // Simple name matching - could be improved for generic types
-                if impl_type.contains(struct_name) {
+                if impl_type.contains(adt_name) {
                     if let Some(assoc_item_list) = impl_item.assoc_item_list() {
                         for assoc_item in assoc_item_list.assoc_items() {
                             if let ast::AssocItem::Fn(func) = assoc_item {
                                 if should_include_item(func.visibility(), include_private) {
-                                    if let Some(func_info) = extract_function_info(func, full_source, include_private) {
+                                    if let Some(func_info) =
+                                        extract_function_info(func, full_source, include_private)
+                                    {
                                         methods.push(func_info);
                                     }
                                 }
@@ -466,7 +533,7 @@ fn extract_struct_methods(struct_name: &str, full_source: &str, include_private:
             }
         }
     }
-    
+
     methods
 }
 
@@ -487,15 +554,19 @@ fn extract_item_visibility(item: &ast::Item) -> String {
     extract_visibility(vis)
 }
 
-fn extract_trait_info(t: ast::Trait, full_source: &str, _include_private: bool) -> Option<ItemInfo> {
+fn extract_trait_info(
+    t: ast::Trait,
+    _full_source: &str,
+    _include_private: bool,
+) -> Option<ItemInfo> {
     let name = t.name()?.text().to_string();
     let syntax = t.syntax();
     let full_code = syntax.text().to_string();
     let location = text_range_to_byte_offsets(syntax.text_range());
-    let doc_comment = extract_doc_comment(syntax, full_source);
-    
+    let doc_comment = extract_doc_comment(&t);
+
     // Extract trait methods
-    let methods = extract_trait_methods(&t, full_source);
+    let methods = extract_trait_methods(&t, _full_source);
 
     Some(ItemInfo {
         name,
@@ -547,65 +618,16 @@ fn text_range_to_byte_offsets(range: TextRange) -> [u32; 2] {
     [range.start().into(), range.end().into()]
 }
 
-fn extract_doc_comment(syntax: &ra_ap_syntax::SyntaxNode, full_source: &str) -> Option<String> {
-    let mut doc_lines = Vec::new();
+fn extract_doc_comment<T: HasDocComments>(node: &T) -> Option<String> {
+    let docs: Vec<String> = node.doc_comments()
+        .map(|comment| comment.text().trim_start_matches("///").trim().to_string())
+        .collect();
     
-    // Look at the full source around this item
-    let range = syntax.text_range();
-    let start_offset = range.start().into();
-    
-    // Look backwards in the source for doc comments
-    let lines: Vec<&str> = full_source[..start_offset].lines().collect();
-    for line in lines.iter().rev() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("///") {
-            let content = trimmed.trim_start_matches("///").trim();
-            doc_lines.insert(0, content.to_string());
-        } else if trimmed.is_empty() {
-            // Empty line, might have more doc comments above
-            continue;
-        } else {
-            // Non-doc line, stop looking
-            break;
-        }
-    }
-    
-    // Also check for doc attributes like #[doc = "..."]  
-    for attr_text in extract_attributes_from_syntax(syntax) {
-        if attr_text.starts_with("#[doc") {
-            // Simple extraction of doc attribute content
-            if let Some(start) = attr_text.find('"') {
-                if let Some(end) = attr_text.rfind('"') {
-                    if start < end {
-                        doc_lines.push(attr_text[start + 1..end].to_string());
-                    }
-                }
-            }
-        }
-    }
-    
-    if doc_lines.is_empty() {
+    if docs.is_empty() {
         None
     } else {
-        Some(doc_lines.join("\n"))
+        Some(docs.join("\n"))
     }
 }
 
-fn extract_attributes_from_syntax(syntax: &ra_ap_syntax::SyntaxNode) -> Vec<String> {
-    let mut attributes = Vec::new();
-    
-    // Look for attribute nodes that are siblings before this node
-    let mut current = syntax.clone();
-    while let Some(prev) = current.prev_sibling() {
-        current = prev;
-        if let Some(attr) = ast::Attr::cast(current.clone()) {
-            attributes.push(attr.syntax().text().to_string());
-        } else if !current.kind().is_trivia() {
-            // Stop if we hit a non-trivia, non-attribute node
-            break;
-        }
-    }
-    
-    attributes.reverse();
-    attributes
-}
+// Removed extract_attributes_from_syntax - no longer needed with HasDocComments

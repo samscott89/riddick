@@ -6,22 +6,23 @@
       {
         "name": "Expression",
         "fullCode": "/// Represents a parsed expression\n#[derive(Debug, Clone, PartialEq)]\npub enum Expression {\n    /// Simple variable reference (e.g., `foo`)\n    Variable(String),\n\n    /// Path expression (e.g., `std::vec::Vec`, `lldb_demo::User`)\n    Path(Vec<String>),\n\n    /// Generic type (e.g., `Vec<String>`, `HashMap<String, u32>`)\n    Generic { base: String, args: Vec<String> },\n\n    /// Field access (e.g., `foo.bar`, `self.field`)\n    FieldAccess {\n        base: Box<Expression>,\n        field: String,\n    },\n\n    /// Array/slice indexing (e.g., `arr[5]`, `slice[idx]`)\n    Index {\n        base: Box<Expression>,\n        index: Box<Expression>,\n    },\n\n    /// Pointer dereferencing (e.g., `*ptr`, `**ptr_ptr`)\n    Deref(Box<Expression>),\n\n    /// Address-of operator (e.g., `&var`, `&mut var`)\n    AddressOf {\n        mutable: bool,\n        expr: Box<Expression>,\n    },\n\n    /// Literal number (e.g., `42`, `0xff`)\n    NumberLiteral(u64),\n\n    /// String literal (e.g., `\"hello\"`, `\"created\"`)\n    StringLiteral(String),\n\n    /// Parenthesized expression (e.g., `(foo)`)\n    Parenthesized(Box<Expression>),\n\n    /// Method call (e.g., `foo.bar()`, `vec.len()`)\n    MethodCall {\n        base: Box<Expression>,\n        method: String,\n        args: Vec<Expression>,\n    },\n\n    /// Function call (e.g., `foo()`, `bar(1, 2)`)\n    FunctionCall {\n        function: String,\n        args: Vec<Expression>,\n    },\n}",
-        "docComment": null,
+        "docComment": "Represents a parsed expression",
         "visibility": "pub",
         "location": [
           312,
           1715
         ],
         "details": {
-          "other": {
-            "itemType": "enum"
+          "adt": {
+            "adtType": "enum",
+            "methods": []
           }
         }
       },
       {
         "name": "parse_expression",
         "fullCode": "/// Parse a string into an Expression\npub fn parse_expression(input: &str) -> Result<Expression> {\n    let mut parser = Parser::new(input)?;\n    parser.parse()\n}",
-        "docComment": null,
+        "docComment": "Parse a string into an Expression",
         "visibility": "pub",
         "location": [
           17815,
