@@ -1,15 +1,20 @@
 import type {
   Crate,
-  CrateStatus,
   CreateCrateRequest,
   UpdateCrateStatusRequest,
 } from '@riddick/types'
+import { CrateStatus } from '@riddick/types'
 
 export class CrateRepository {
   constructor(private db: D1Database) {}
 
   async createCrate(request: CreateCrateRequest): Promise<Crate> {
-    const { name, version, agent_summary, status } = request
+    const {
+      name,
+      version,
+      agent_summary,
+      status = CrateStatus.PENDING,
+    } = request
 
     const result = await this.db
       .prepare(

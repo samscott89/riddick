@@ -4,7 +4,8 @@ import {
   type WorkflowEvent,
 } from 'cloudflare:workers'
 import { DatabaseService } from '@riddick/database'
-import type { ItemInfo } from '@riddick/types'
+import type { FileInfo, ItemInfo } from '@riddick/types'
+
 import {
   CrateStatus,
   type QueueMessage,
@@ -39,6 +40,13 @@ export interface CrateProcessingParams {
 export interface CrateAiSummary {
   crateSummary: string
   moduleSummaries: Map<string, string>
+}
+
+interface StoredModule {
+  name: string
+  key: string
+  items: string[]
+  submodules: StoredModule[]
 }
 
 export class CrateProcessor {
@@ -101,9 +109,8 @@ export class CrateProcessor {
     crateName: string,
     version: string,
     files: Map<string, string>,
-  ): Promise<string[]> {
+  ): Promise<StoredModule> {
     const processedModules = new Set<string>()
-    const storedKeys: string[] = []
 
     // Start with lib.rs or main.rs as entrypoint
     const entrypoint = 'src/lib.rs'
@@ -119,7 +126,7 @@ export class CrateProcessor {
 
     const modulePath: string[] = []
 
-    const keys = await this.parseAndStoreFile(
+    return await this.parseAndStoreFile(
       crateId,
       crateName,
       version,
@@ -128,9 +135,6 @@ export class CrateProcessor {
       files,
       processedModules,
     )
-
-    storedKeys.push(...keys)
-    return storedKeys
   }
 
   private async parseAndStoreFile(
@@ -141,7 +145,7 @@ export class CrateProcessor {
     file: { path: string; content: string },
     allFiles: Map<string, string>,
     processedModules: Set<string>,
-  ): Promise<string[]> {
+  ): Promise<StoredModule> {
     async function storeItem(
       itemKey: string,
       item: ItemInfo,
@@ -155,13 +159,26 @@ export class CrateProcessor {
       }
     }
 
-    const storedKeys: string[] = []
+    let itemKey
+    if (modulePath.length === 0) {
+      // this is the root module
+      itemKey = `crates/${crateName}/${version}/crate.json`
+    } else {
+      itemKey = `crates/${crateName}/${version}/${modulePath.join('/')}.json`
+    }
+
+    const storedItem: StoredModule = {
+      name: modulePath.length === 0 ? crateName : modulePath.join('::'),
+      key: itemKey,
+      items: [],
+      submodules: [],
+    }
 
     const currentPath = ['src', ...modulePath].join('/')
 
     // Mark this file as processed to prevent infinite loops
     if (processedModules.has(file.path)) {
-      return storedKeys
+      return storedItem
     }
     processedModules.add(file.path)
 
@@ -179,17 +196,11 @@ export class CrateProcessor {
       console.warn(
         `Failed to parse file ${file.path}: ${response.errors.join(', ')}`,
       )
-      return storedKeys
+      return storedItem
     }
 
     // save the module summary
-    let itemKey
-    if (modulePath.length === 0) {
-      // this is the root module
-      itemKey = `crates/${crateName}/${version}/crate.json`
-    } else {
-      itemKey = `crates/${crateName}/${version}/${modulePath.join('/')}.json`
-    }
+
     try {
       await this.env.CRATE_BUCKET.put(
         itemKey,
@@ -209,17 +220,17 @@ export class CrateProcessor {
       switch (itemType) {
         case 'function':
           await storeItem(itemKey, item, this.env.CRATE_BUCKET)
-          storedKeys.push(itemKey)
+          storedItem.items.push(itemKey)
 
           break
         case 'adt':
           await storeItem(itemKey, item, this.env.CRATE_BUCKET)
-          storedKeys.push(itemKey)
+          storedItem.items.push(itemKey)
 
           break
         case 'trait':
           await storeItem(itemKey, item, this.env.CRATE_BUCKET)
-          storedKeys.push(itemKey)
+          storedItem.items.push(itemKey)
           break
         default:
           break
@@ -244,7 +255,7 @@ export class CrateProcessor {
         const path = `${currentPath}/${moduleFile}`
         const content = allFiles.get(path)!
 
-        const recursiveKeys = await this.parseAndStoreFile(
+        const recursiveStoredItem = await this.parseAndStoreFile(
           crateId,
           crateName,
           version,
@@ -253,11 +264,11 @@ export class CrateProcessor {
           allFiles,
           processedModules,
         )
-        storedKeys.push(...recursiveKeys)
+        storedItem.submodules.push(recursiveStoredItem)
       }
     }
 
-    return storedKeys
+    return storedItem
   }
 
   private getItemType(item: any): string {
@@ -267,6 +278,181 @@ export class CrateProcessor {
     if ('module' in item.details) return 'module'
     if ('other' in item.details) return item.details.other.itemType
     return 'unknown'
+  }
+
+  private functionPrompt(name: string, fullCode: string): string {
+    return `
+Function: ${name}
+
+Definition:
+\`\`\`rust
+${fullCode}      
+\`\`\``
+  }
+
+  private adtPrompt(
+    adtType: string,
+    name: string,
+    fullCode: string,
+    methods: ItemInfo[],
+  ): string {
+    const methodDetails = methods.map((m) => {
+      if ('function' in m.details) {
+        return m.details.function.signature
+      } else {
+        return `${m.docComment || ''}${m.name}`
+      }
+    })
+
+    return `
+${adtType}: ${name}
+
+Definition:
+
+\`\`\`rust
+${fullCode}
+\`\`\`
+
+Methods:
+${methodDetails.join('\n')}
+`
+  }
+
+  private traitPrompt(name: string, fullCode: string): string {
+    return `
+Trait: ${name}
+
+Definition:
+
+\`\`\`rust
+${fullCode}
+\`\`\`
+`
+  }
+
+  private modulePrompt(name: string, info: FileInfo): string {
+    const skeleton = info
+
+    return `
+Module: ${name}
+
+Definition:
+
+\`\`\`rust
+${skeleton}
+\`\`\`
+`
+  }
+
+  private promptForItemType(item: ItemInfo): string | null {
+    if ('function' in item.details) {
+      const _functionDetails = item.details.function
+
+      return this.functionPrompt(item.name, item.fullCode)
+    }
+    if ('adt' in item.details) {
+      const adtDetails = item.details.adt
+      return this.adtPrompt(
+        adtDetails.adtType,
+        item.name,
+        item.fullCode,
+        adtDetails.methods,
+      )
+    }
+    if ('trait' in item.details) {
+      return this.traitPrompt(item.name, item.fullCode)
+    }
+    return null
+  }
+
+  async summarizeItem(storedItem: StoredModule): Promise<void> {
+    console.log(
+      `Starting AI summarization for ${storedItem.items.length} items`,
+    )
+
+    // we're going to do a depth-first traversal of the stored item structure
+    for (const submodule of storedItem.submodules) {
+      await this.summarizeItem(submodule)
+    }
+
+    // then summarize all the items invidually
+    for (const key of storedItem.items) {
+      try {
+        // Fetch the raw JSON ItemInfo object from R2
+        const itemObj = await this.env.CRATE_BUCKET.get(key)
+        if (!itemObj) {
+          console.warn(`Item not found in R2: ${key}`)
+          continue
+        }
+
+        const item: ItemInfo = await itemObj.json()
+
+        // Skip if already has agent_summary
+        if (item.agent_summary) {
+          console.log(`Item ${item.name} already has agent_summary, skipping`)
+          continue
+        }
+
+        const itemPrompt = this.promptForItemType(item)
+        if (!itemPrompt) {
+          // not something we want to summarize
+          continue
+        }
+
+        // Generate AI summary using the item's fullCode and docComment
+        const summaryPrompt = `Analyze this Rust code item and provide a concise summary: ${itemPrompt}".`
+
+        const agentSummary = await this.generateAISummary(summaryPrompt)
+
+        // Add the summary to the item
+        item.agent_summary = agentSummary
+
+        // Overwrite the existing R2 object with the enriched version
+        await this.env.CRATE_BUCKET.put(key, JSON.stringify(item))
+        console.log(`Updated item ${item.name} with AI summary`)
+      } catch (error) {
+        console.error(`Failed to summarize item at ${key}:`, error)
+      }
+    }
+
+    // finally, summarize the module itself
+    const key = storedItem.key
+    try {
+      // Fetch the raw JSON ItemInfo object from R2
+      const itemObj = await this.env.CRATE_BUCKET.get(key)
+      if (!itemObj) {
+        console.warn(`Module not found in R2: ${key}`)
+        return
+      }
+
+      const info: FileInfo = await itemObj.json()
+
+      // Skip if already has agent_summary
+      if (info.agent_summary) {
+        console.log(
+          `Module ${storedItem.name} already has agent_summary, skipping`,
+        )
+        return
+      }
+
+      // Generate AI summary using the item's fullCode and docComment
+      const modulePrompt = this.modulePrompt(storedItem.name, info)
+
+      const summaryPrompt = `Analyze this Rust module and provide a concise summary: ${modulePrompt}".`
+
+      const agentSummary = await this.generateAISummary(summaryPrompt)
+
+      // Add the summary to the item
+      info.agent_summary = agentSummary
+
+      // Overwrite the existing R2 object with the enriched version
+      await this.env.CRATE_BUCKET.put(key, JSON.stringify(info))
+      console.log(`Updated item ${storedItem.name} with AI summary`)
+    } catch (error) {
+      console.error(`Failed to summarize item at ${key}:`, error)
+    }
+
+    console.log(`Completed AI summarization`)
   }
 
   async generateSummaries(crateId: number): Promise<CrateAiSummary> {
@@ -433,7 +619,7 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
         return await crateProcessor.fetchCrateData(crateName, version)
       })
 
-      const storedKeys = await step.do(
+      const storedItem = await step.do(
         'recursive-parse-and-store',
         async () => {
           return await crateProcessor.recursivelyParseAndStore(
@@ -445,9 +631,14 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
         },
       )
 
-      console.log(`Phase 1 completed: stored ${storedKeys.length} items in R2`)
+      console.log(`Phase 1 completed: stored items in R2`)
 
-      // Phase 2: AI enrichment (generate summaries)
+      // Phase 2: AI enrichment (summarize individual items)
+      await step.do('summarize-items', async () => {
+        return await crateProcessor.summarizeItem(storedItem)
+      })
+
+      // Phase 3: Generate crate and module level summaries
       const summary = await step.do('generate-summaries', async () => {
         return await crateProcessor.generateSummaries(crateId)
       })

@@ -4,7 +4,7 @@
   "description": "",
   "private": true,
   "scripts": {
-    "dev": "pnpm -r dev",
+    "dev": "wrangler dev -c apps/api/wrangler.jsonc -c apps/crate-workflow/wrangler.jsonc -c apps/rust-parser/wrangler.jsonc --persist-to ./.wrangler/state",
     "test": "vitest run",
     "build": "pnpm -r build",
     "deploy": "pnpm -r deploy",

@@ -1,6 +1,6 @@
 import { DatabaseService } from '@riddick/database'
 import { FixtureHelper } from '@riddick/fixtures'
-import type { QueueMessage } from '@riddick/types'
+import type { ItemInfo, QueueMessage } from '@riddick/types'
 import { fetchMock, env, SELF } from 'cloudflare:test'
 import { beforeAll, describe, it, expect, vi, inject } from 'vitest'
 
@@ -99,5 +99,14 @@ describe('crate-workflow', () => {
       'types/parse_symbol.json',
       'types/parse_type.json',
     ])
+
+    for (const file of files.objects) {
+      const content = await env.CRATE_BUCKET.get(file.key)
+      expect(content).toBeDefined()
+      expect(content!.body).toBeDefined()
+      console.log(`File: ${file.key}`)
+      const info: ItemInfo = await content!.json()
+      console.log('AI Summary:', info.agent_summary)
+    }
   })
 })

@@ -1,9 +1,10 @@
+import type { ItemInfo as ParsedItemInfo } from './rust_parser_generated/ItemInfo'
+import type { FileInfo as ParsedFileInfo } from './rust_parser_generated/FileInfo'
+
 // Direct re-exports of generated types
 export type { AdtDetails } from './rust_parser_generated/AdtDetails'
-export type { FileInfo } from './rust_parser_generated/FileInfo'
 export type { FunctionDetails } from './rust_parser_generated/FunctionDetails'
 export type { ItemDetails } from './rust_parser_generated/ItemDetails'
-export type { ItemInfo } from './rust_parser_generated/ItemInfo'
 export type { ModuleDetails } from './rust_parser_generated/ModuleDetails'
 export type { ModuleInfo } from './rust_parser_generated/ModuleInfo'
 export type { ModuleReference } from './rust_parser_generated/ModuleReference'
@@ -47,41 +48,11 @@ export interface Crate {
   created_at: string
 }
 
-export interface Module {
-  id: number
-  crate_id: number
-  path: string
-  agent_summary: string | null
-}
-
-export interface Item {
-  id: number
-  module_id: number
-  name: string
-  item_type: ItemType
-  source_code: string
-  agent_summary: string | null
-}
-
 export interface CreateCrateRequest {
   name: string
   version: string
   agent_summary?: string
   status?: CrateStatus
-}
-
-export interface CreateModuleRequest {
-  crate_id: number
-  path: string
-  agent_summary?: string
-}
-
-export interface CreateItemRequest {
-  module_id: number
-  name: string
-  item_type: string
-  source_code: string
-  agent_summary?: string
 }
 
 export interface UpdateCrateStatusRequest {
@@ -93,10 +64,6 @@ export interface UpdateCrateStatusRequest {
 export interface UpdateSummaryRequest {
   id: number
   summary: string
-}
-
-export interface BatchCreateItemsRequest {
-  items: CreateItemRequest[]
 }
 
 // Shared types between api-worker and crate-processor
@@ -115,9 +82,10 @@ export interface CrateWithData {
   files: Map<string, string>
 }
 
-export interface ProcessingStage {
-  stage: string
-  status: 'pending' | 'in_progress' | 'completed' | 'failed'
-  error_message?: string
-  updated_at: string
+// Extended type to include AI-generated summary
+export interface ItemInfo extends ParsedItemInfo {
+  agent_summary?: string
+}
+export interface FileInfo extends ParsedFileInfo {
+  agent_summary?: string
 }
