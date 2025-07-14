@@ -9,9 +9,9 @@
         "path": "main.rs",
         "items": [
           {
-            "type": "mod",
             "name": "expressions",
-            "visibility": "pub",
+            "fullCode": "pub mod expressions;",
+            "docComment": null,
             "location": {
               "startLine": 1,
               "startColumn": 21,
@@ -20,20 +20,16 @@
               "startByte": 252,
               "endByte": 272
             },
-            "sourceCode": "pub mod expressions;",
-            "attributes": [],
-            "genericParameters": [],
-            "parameters": null,
-            "returnType": null,
-            "fields": null,
-            "variants": null,
-            "implType": null,
-            "traitName": null
+            "details": {
+              "module": {
+                "items": []
+              }
+            }
           },
           {
-            "type": "mod",
             "name": "types",
-            "visibility": "pub",
+            "fullCode": "pub mod types;",
+            "docComment": null,
             "location": {
               "startLine": 1,
               "startColumn": 15,
@@ -42,20 +38,16 @@
               "startByte": 273,
               "endByte": 287
             },
-            "sourceCode": "pub mod types;",
-            "attributes": [],
-            "genericParameters": [],
-            "parameters": null,
-            "returnType": null,
-            "fields": null,
-            "variants": null,
-            "implType": null,
-            "traitName": null
+            "details": {
+              "module": {
+                "items": []
+              }
+            }
           },
           {
-            "type": "use",
             "name": "expressions::{Expression, parse_expression}",
-            "visibility": "pub",
+            "fullCode": "pub use expressions::{Expression, parse_expression};",
+            "docComment": null,
             "location": {
               "startLine": 1,
               "startColumn": 53,
@@ -64,20 +56,16 @@
               "startByte": 289,
               "endByte": 341
             },
-            "sourceCode": "pub use expressions::{Expression, parse_expression};",
-            "attributes": [],
-            "genericParameters": [],
-            "parameters": null,
-            "returnType": null,
-            "fields": null,
-            "variants": null,
-            "implType": null,
-            "traitName": null
+            "details": {
+              "other": {
+                "itemType": "use"
+              }
+            }
           },
           {
-            "type": "use",
             "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
-            "visibility": "pub",
+            "fullCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
+            "docComment": null,
             "location": {
               "startLine": 1,
               "startColumn": 69,
@@ -86,15 +74,11 @@
               "startByte": 342,
               "endByte": 410
             },
-            "sourceCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
-            "attributes": [],
-            "genericParameters": [],
-            "parameters": null,
-            "returnType": null,
-            "fields": null,
-            "variants": null,
-            "implType": null,
-            "traitName": null
+            "details": {
+              "other": {
+                "itemType": "use"
+              }
+            }
           }
         ],
         "location": {
@@ -112,9 +96,9 @@
       "path": "main.rs",
       "items": [
         {
-          "type": "mod",
           "name": "expressions",
-          "visibility": "pub",
+          "fullCode": "pub mod expressions;",
+          "docComment": null,
           "location": {
             "startLine": 1,
             "startColumn": 21,
@@ -123,20 +107,16 @@
             "startByte": 252,
             "endByte": 272
           },
-          "sourceCode": "pub mod expressions;",
-          "attributes": [],
-          "genericParameters": [],
-          "parameters": null,
-          "returnType": null,
-          "fields": null,
-          "variants": null,
-          "implType": null,
-          "traitName": null
+          "details": {
+            "module": {
+              "items": []
+            }
+          }
         },
         {
-          "type": "mod",
           "name": "types",
-          "visibility": "pub",
+          "fullCode": "pub mod types;",
+          "docComment": null,
           "location": {
             "startLine": 1,
             "startColumn": 15,
@@ -145,20 +125,16 @@
             "startByte": 273,
             "endByte": 287
           },
-          "sourceCode": "pub mod types;",
-          "attributes": [],
-          "genericParameters": [],
-          "parameters": null,
-          "returnType": null,
-          "fields": null,
-          "variants": null,
-          "implType": null,
-          "traitName": null
+          "details": {
+            "module": {
+              "items": []
+            }
+          }
         },
         {
-          "type": "use",
           "name": "expressions::{Expression, parse_expression}",
-          "visibility": "pub",
+          "fullCode": "pub use expressions::{Expression, parse_expression};",
+          "docComment": null,
           "location": {
             "startLine": 1,
             "startColumn": 53,
@@ -167,20 +143,16 @@
             "startByte": 289,
             "endByte": 341
           },
-          "sourceCode": "pub use expressions::{Expression, parse_expression};",
-          "attributes": [],
-          "genericParameters": [],
-          "parameters": null,
-          "returnType": null,
-          "fields": null,
-          "variants": null,
-          "implType": null,
-          "traitName": null
+          "details": {
+            "other": {
+              "itemType": "use"
+            }
+          }
         },
         {
-          "type": "use",
           "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
-          "visibility": "pub",
+          "fullCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
+          "docComment": null,
           "location": {
             "startLine": 1,
             "startColumn": 69,
@@ -189,15 +161,11 @@
             "startByte": 342,
             "endByte": 410
           },
-          "sourceCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
-          "attributes": [],
-          "genericParameters": [],
-          "parameters": null,
-          "returnType": null,
-          "fields": null,
-          "variants": null,
-          "implType": null,
-          "traitName": null
+          "details": {
+            "other": {
+              "itemType": "use"
+            }
+          }
         }
       ],
       "location": {

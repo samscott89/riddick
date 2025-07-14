@@ -26,7 +26,7 @@
 	"services": [
 		{
 			"binding": "RUST_PARSER",
-			"service": "rust-parser-worker"
+			"service": "rust-parser"
 		}
 	],
 	"d1_databases": [

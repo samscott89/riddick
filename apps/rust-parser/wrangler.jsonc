@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "rust-parser-worker",
+  "name": "rust-parser",
   "main": "build/worker/shim.mjs",
   "compatibility_date": "2025-07-12",
   

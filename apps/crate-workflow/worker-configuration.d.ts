@@ -5,7 +5,7 @@ declare namespace Cloudflare {
 	interface Env {
 		CRATE_BUCKET: R2Bucket;
 		DB: D1Database;
-		RUST_PARSER: Fetcher /* rust-parser-worker */;
+		RUST_PARSER: Fetcher /* rust-parser */;
 		AI: Ai;
 		CRATE_WORKFLOW: Workflow;
 	}

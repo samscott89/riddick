@@ -1,5 +1,5 @@
 use ra_ap_syntax::{
-    ast::{self, HasGenericParams, HasModuleItem, HasName, HasVisibility},
+    ast::{self, HasModuleItem, HasName, HasVisibility},
     AstNode, SourceFile, TextRange,
 };
 use serde::{Deserialize, Serialize};
@@ -45,56 +45,69 @@ pub struct ModuleInfo {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemInfo {
-    #[serde(rename = "type")]
-    pub item_type: String,
     pub name: String,
-    pub visibility: String,
+    pub full_code: String,
+    pub doc_comment: Option<String>,
     pub location: SourceLocation,
-    pub source_code: String,
-    pub attributes: Vec<String>,
-    pub generic_parameters: Vec<String>,
-
-    // Function-specific fields
-    pub parameters: Option<Vec<ParameterInfo>>,
-    pub return_type: Option<String>,
-
-    // Struct-specific fields
-    pub fields: Option<Vec<FieldInfo>>,
-
-    // Enum-specific fields
-    pub variants: Option<Vec<VariantInfo>>,
-
-    // Impl-specific fields
-    pub impl_type: Option<String>,
-    pub trait_name: Option<String>,
+    pub details: ItemDetails,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct ParameterInfo {
-    pub name: String,
-    pub param_type: String,
-    pub is_self: bool,
-    pub is_mutable: bool,
+pub enum ItemDetails {
+    Function(FunctionDetails),
+    Struct(StructDetails),
+    Trait(TraitDetails),
+    Module(ModuleDetails),
+    Other(OtherDetails),
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct FieldInfo {
-    pub name: String,
-    pub field_type: String,
-    pub visibility: String,
+pub struct FunctionDetails {
+    pub signature: String,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct VariantInfo {
-    pub name: String,
-    pub discriminant: Option<String>,
+pub struct StructDetails {
+    pub methods: Vec<ItemInfo>,
 }
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TraitDetails {
+    pub methods: Vec<TraitMethodInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ModuleDetails {
+    pub items: Vec<ItemInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct OtherDetails {
+    pub item_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TraitMethodInfo {
+    pub name: String,
+    pub signature: String,
+    pub doc_comment: Option<String>,
+    pub location: SourceLocation,
+}
+
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
@@ -137,11 +150,15 @@ pub fn parse_rust_code(code: &str) -> Result<ParseResponse, String> {
 
     // Extract module information
     let source_file = parsed.tree();
-    let root_module = extract_module_info(&source_file, "main", "main.rs");
+    let root_module = extract_module_info(&source_file, "main", "main.rs", code);
+    
+    // Collect all modules recursively
+    let mut all_modules = vec![root_module.clone()];
+    collect_modules_recursive(&source_file, "main", &mut all_modules, code);
 
     let crate_info = CrateInfo {
         name: "unnamed".to_string(),
-        modules: vec![root_module.clone()],
+        modules: all_modules,
         root_module,
     };
 
@@ -153,12 +170,28 @@ pub fn parse_rust_code(code: &str) -> Result<ParseResponse, String> {
     })
 }
 
-fn extract_module_info(source_file: &SourceFile, name: &str, path: &str) -> ModuleInfo {
+fn extract_module_info(source_file: &SourceFile, name: &str, path: &str, full_source: &str) -> ModuleInfo {
     let mut items = Vec::new();
 
     for item in source_file.items() {
-        if let Some(item_info) = extract_item_info(item) {
-            items.push(item_info);
+        // Only include public items
+        let is_public = match &item {
+            ast::Item::Fn(f) => is_item_public(f.visibility()),
+            ast::Item::Struct(s) => is_item_public(s.visibility()),
+            ast::Item::Enum(e) => is_item_public(e.visibility()),
+            ast::Item::Trait(t) => is_item_public(t.visibility()),
+            ast::Item::Module(m) => is_item_public(m.visibility()),
+            ast::Item::Use(u) => is_item_public(u.visibility()),
+            ast::Item::Const(c) => is_item_public(c.visibility()),
+            ast::Item::Static(s) => is_item_public(s.visibility()),
+            ast::Item::TypeAlias(t) => is_item_public(t.visibility()),
+            _ => false,
+        };
+        
+        if is_public {
+            if let Some(item_info) = extract_item_info(item, full_source) {
+                items.push(item_info);
+            }
         }
     }
 
@@ -173,453 +206,360 @@ fn extract_module_info(source_file: &SourceFile, name: &str, path: &str) -> Modu
     }
 }
 
-fn extract_item_info(item: ast::Item) -> Option<ItemInfo> {
-    match item {
-        ast::Item::Fn(func) => extract_function_info(func),
-        ast::Item::Struct(s) => extract_struct_info(s),
-        ast::Item::Enum(e) => extract_enum_info(e),
-        ast::Item::Trait(t) => extract_trait_info(t),
-        ast::Item::Impl(i) => extract_impl_info(i),
-        ast::Item::Module(m) => extract_module_item_info(m),
-        ast::Item::Use(u) => extract_use_info(u),
-        ast::Item::Const(c) => extract_const_info(c),
-        ast::Item::Static(s) => extract_static_info(s),
-        ast::Item::TypeAlias(t) => extract_type_alias_info(t),
-        _ => None,
+fn is_item_public(vis: Option<ast::Visibility>) -> bool {
+    match vis {
+        Some(v) => v.syntax().text().to_string().contains("pub"),
+        None => false,
     }
 }
 
-fn extract_function_info(func: ast::Fn) -> Option<ItemInfo> {
-    let name = func.name()?.text().to_string();
-    let visibility = extract_visibility(func.visibility());
-    let syntax = func.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-
-    let parameters = extract_parameters(&func);
-    let return_type = func.ret_type().map(|rt| rt.syntax().text().to_string());
-    let generic_parameters = extract_generic_params(func.generic_param_list());
-    let attributes = extract_attributes(&func);
-
-    Some(ItemInfo {
-        item_type: "function".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters,
-        parameters: Some(parameters),
-        return_type,
-        fields: None,
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_struct_info(s: ast::Struct) -> Option<ItemInfo> {
-    let name = s.name()?.text().to_string();
-    let visibility = extract_visibility(s.visibility());
-    let syntax = s.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-
-    let fields = extract_struct_fields(&s);
-    let generic_parameters = extract_generic_params(s.generic_param_list());
-    let attributes = extract_attributes(&s);
-
-    Some(ItemInfo {
-        item_type: "struct".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters,
-        parameters: None,
-        return_type: None,
-        fields: Some(fields),
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_enum_info(e: ast::Enum) -> Option<ItemInfo> {
-    let name = e.name()?.text().to_string();
-    let visibility = extract_visibility(e.visibility());
-    let syntax = e.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-
-    let variants = extract_enum_variants(&e);
-    let generic_parameters = extract_generic_params(e.generic_param_list());
-    let attributes = extract_attributes(&e);
-
-    Some(ItemInfo {
-        item_type: "enum".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters,
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: Some(variants),
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_trait_info(t: ast::Trait) -> Option<ItemInfo> {
-    let name = t.name()?.text().to_string();
-    let visibility = extract_visibility(t.visibility());
-    let syntax = t.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-
-    let generic_parameters = extract_generic_params(t.generic_param_list());
-    let attributes = extract_attributes(&t);
-
-    Some(ItemInfo {
-        item_type: "trait".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters,
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_impl_info(i: ast::Impl) -> Option<ItemInfo> {
-    let impl_type = i.self_ty()?.syntax().text().to_string();
-    let trait_name = i.trait_().map(|t| t.syntax().text().to_string());
-    let name = trait_name
-        .as_ref()
-        .map(|t| format!("{t} for {impl_type}"))
-        .unwrap_or(impl_type.clone());
-
-    let syntax = i.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-
-    let generic_parameters = extract_generic_params(i.generic_param_list());
-    let attributes = extract_attributes(&i);
-
-    Some(ItemInfo {
-        item_type: "impl".to_string(),
-        name,
-        visibility: "private".to_string(),
-        location,
-        source_code,
-        attributes,
-        generic_parameters,
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: None,
-        impl_type: Some(impl_type),
-        trait_name,
-    })
-}
-
-fn extract_module_item_info(m: ast::Module) -> Option<ItemInfo> {
-    let name = m.name()?.text().to_string();
-    let visibility = extract_visibility(m.visibility());
-    let syntax = m.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-    let attributes = extract_attributes(&m);
-
-    Some(ItemInfo {
-        item_type: "mod".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters: vec![],
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_use_info(u: ast::Use) -> Option<ItemInfo> {
-    let syntax = u.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-    let visibility = extract_visibility(u.visibility());
-    let attributes = extract_attributes(&u);
-
-    // Extract the use path
-    let name = u.use_tree()?.syntax().text().to_string();
-
-    Some(ItemInfo {
-        item_type: "use".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters: vec![],
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_const_info(c: ast::Const) -> Option<ItemInfo> {
-    let name = c.name()?.text().to_string();
-    let visibility = extract_visibility(c.visibility());
-    let syntax = c.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-    let attributes = extract_attributes(&c);
-
-    Some(ItemInfo {
-        item_type: "const".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters: vec![],
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_static_info(s: ast::Static) -> Option<ItemInfo> {
-    let name = s.name()?.text().to_string();
-    let visibility = extract_visibility(s.visibility());
-    let syntax = s.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-    let attributes = extract_attributes(&s);
-
-    Some(ItemInfo {
-        item_type: "static".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters: vec![],
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_type_alias_info(t: ast::TypeAlias) -> Option<ItemInfo> {
-    let name = t.name()?.text().to_string();
-    let visibility = extract_visibility(t.visibility());
-    let syntax = t.syntax();
-    let source_code = syntax.text().to_string();
-    let location = text_range_to_location(syntax.text_range(), &source_code);
-    let generic_parameters = extract_generic_params(t.generic_param_list());
-    let attributes = extract_attributes(&t);
-
-    Some(ItemInfo {
-        item_type: "type_alias".to_string(),
-        name,
-        visibility,
-        location,
-        source_code,
-        attributes,
-        generic_parameters,
-        parameters: None,
-        return_type: None,
-        fields: None,
-        variants: None,
-        impl_type: None,
-        trait_name: None,
-    })
-}
-
-fn extract_visibility(vis: Option<ast::Visibility>) -> String {
-    match vis {
-        Some(v) => {
-            let text = v.syntax().text().to_string();
-            if text.contains("pub(crate)") {
-                "pub(crate)".to_string()
-            } else if text.contains("pub(super)") {
-                "pub(super)".to_string()
-            } else if text.contains("pub(in") {
-                "pub(in path)".to_string()
-            } else if text.contains("pub") {
-                "pub".to_string()
-            } else {
-                "private".to_string()
+fn collect_modules_recursive(source_file: &SourceFile, parent_path: &str, modules: &mut Vec<ModuleInfo>, full_source: &str) {
+    for item in source_file.items() {
+        if let ast::Item::Module(module) = item {
+            if is_item_public(module.visibility()) {
+                if let Some(name) = module.name() {
+                    let module_name = name.text().to_string();
+                    let module_path = format!("{parent_path}::{module_name}");
+                    
+                    // Process inline modules
+                    if let Some(item_list) = module.item_list() {
+                        let mut module_items = Vec::new();
+                        
+                        for item in item_list.items() {
+                            let is_public = match &item {
+                                ast::Item::Fn(f) => is_item_public(f.visibility()),
+                                ast::Item::Struct(s) => is_item_public(s.visibility()),
+                                ast::Item::Enum(e) => is_item_public(e.visibility()),
+                                ast::Item::Trait(t) => is_item_public(t.visibility()),
+                                ast::Item::Module(m) => is_item_public(m.visibility()),
+                                ast::Item::Use(u) => is_item_public(u.visibility()),
+                                ast::Item::Const(c) => is_item_public(c.visibility()),
+                                ast::Item::Static(s) => is_item_public(s.visibility()),
+                                ast::Item::TypeAlias(t) => is_item_public(t.visibility()),
+                                _ => false,
+                            };
+                            
+                            if is_public {
+                                if let Some(item_info) = extract_item_info(item.clone(), full_source) {
+                                    module_items.push(item_info);
+                                }
+                            }
+                            
+                            // Recursively process submodules
+                            if let ast::Item::Module(submodule) = item {
+                                if is_item_public(submodule.visibility()) {
+                                    if let Some(submodule_name) = submodule.name() {
+                                        let submodule_path = format!("{module_path}::{}", submodule_name.text());
+                                        if let Some(submodule_items) = submodule.item_list() {
+                                            collect_module_items_recursive(&submodule_items, &submodule_path, modules, full_source);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        let syntax = module.syntax();
+                        let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
+                        
+                        modules.push(ModuleInfo {
+                            name: module_name,
+                            path: module_path,
+                            items: module_items,
+                            location,
+                        });
+                    }
+                }
             }
         }
-        None => "private".to_string(),
     }
 }
 
-fn extract_parameters(func: &ast::Fn) -> Vec<ParameterInfo> {
-    let mut params = Vec::new();
-
-    if let Some(param_list) = func.param_list() {
-        // Handle self parameter separately
-        if let Some(self_param) = param_list.self_param() {
-            let self_text = self_param.syntax().text().to_string();
-            params.push(ParameterInfo {
-                name: "self".to_string(),
-                param_type: "Self".to_string(),
-                is_self: true,
-                is_mutable: self_text.contains("mut"),
-            });
-        }
-
-        // Handle regular parameters
-        for param in param_list.params() {
-            let param_name = param.pat().map(|p| p.to_string()).unwrap_or_default();
-            let param_type = param
-                .ty()
-                .map(|t| t.syntax().text().to_string())
-                .unwrap_or_default();
-
-            params.push(ParameterInfo {
-                name: param_name.clone(),
-                param_type,
-                is_self: false,
-                is_mutable: param_name.contains("mut"),
-            });
+fn collect_module_items_recursive(item_list: &ast::ItemList, parent_path: &str, modules: &mut Vec<ModuleInfo>, full_source: &str) {
+    for item in item_list.items() {
+        if let ast::Item::Module(module) = item {
+            if is_item_public(module.visibility()) {
+                if let Some(name) = module.name() {
+                    let module_name = name.text().to_string();
+                    let module_path = format!("{parent_path}::{module_name}");
+                    
+                    if let Some(item_list) = module.item_list() {
+                        let mut module_items = Vec::new();
+                        
+                        for item in item_list.items() {
+                            let is_public = match &item {
+                                ast::Item::Fn(f) => is_item_public(f.visibility()),
+                                ast::Item::Struct(s) => is_item_public(s.visibility()),
+                                ast::Item::Enum(e) => is_item_public(e.visibility()),
+                                ast::Item::Trait(t) => is_item_public(t.visibility()),
+                                ast::Item::Module(m) => is_item_public(m.visibility()),
+                                ast::Item::Use(u) => is_item_public(u.visibility()),
+                                ast::Item::Const(c) => is_item_public(c.visibility()),
+                                ast::Item::Static(s) => is_item_public(s.visibility()),
+                                ast::Item::TypeAlias(t) => is_item_public(t.visibility()),
+                                _ => false,
+                            };
+                            
+                            if is_public {
+                                if let Some(item_info) = extract_item_info(item.clone(), full_source) {
+                                    module_items.push(item_info);
+                                }
+                            }
+                        }
+                        
+                        let syntax = module.syntax();
+                        let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
+                        
+                        modules.push(ModuleInfo {
+                            name: module_name.clone(),
+                            path: module_path.clone(),
+                            items: module_items,
+                            location,
+                        });
+                        
+                        // Recursively process nested modules
+                        collect_module_items_recursive(&item_list, &module_path, modules, full_source);
+                    }
+                }
+            }
         }
     }
-
-    params
 }
 
-fn extract_struct_fields(s: &ast::Struct) -> Vec<FieldInfo> {
-    let mut fields = Vec::new();
+fn extract_item_info(item: ast::Item, full_source: &str) -> Option<ItemInfo> {
+    match item {
+        ast::Item::Fn(func) => extract_function_info(func, full_source),
+        ast::Item::Struct(s) => extract_struct_info(s, full_source),
+        ast::Item::Trait(t) => extract_trait_info(t, full_source),
+        ast::Item::Module(m) => extract_module_item_info(m, full_source),
+        other => extract_other_item_info(other, full_source),
+    }
+}
 
-    match s.field_list() {
-        Some(ast::FieldList::RecordFieldList(record_fields)) => {
-            for field in record_fields.fields() {
-                if let Some(name) = field.name() {
-                    let field_type = field
-                        .ty()
-                        .map(|t| t.syntax().text().to_string())
-                        .unwrap_or_default();
-                    let visibility = extract_visibility(field.visibility());
+fn extract_function_info(func: ast::Fn, full_source: &str) -> Option<ItemInfo> {
+    let name = func.name()?.text().to_string();
+    let syntax = func.syntax();
+    let full_code = syntax.text().to_string();
+    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let doc_comment = extract_doc_comment(syntax, full_source);
+    
+    // Extract function signature (everything before the body)
+    let signature = if let Some(body) = func.body() {
+        let body_start = body.syntax().text_range().start();
+        let func_start = syntax.text_range().start();
+        let signature_end = (body_start - func_start).into();
+        full_code[..signature_end].trim_end().to_string()
+    } else {
+        // No body (trait method declaration)
+        full_code.clone()
+    };
 
-                    fields.push(FieldInfo {
+    Some(ItemInfo {
+        name,
+        full_code,
+        doc_comment,
+        location,
+        details: ItemDetails::Function(FunctionDetails { signature }),
+    })
+}
+
+fn extract_struct_info(s: ast::Struct, full_source: &str) -> Option<ItemInfo> {
+    let name = s.name()?.text().to_string();
+    let syntax = s.syntax();
+    let full_code = syntax.text().to_string();
+    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let doc_comment = extract_doc_comment(syntax, full_source);
+    
+    // Find impl blocks for this struct in the source file
+    let methods = extract_struct_methods(&name, full_source);
+
+    Some(ItemInfo {
+        name,
+        full_code,
+        doc_comment,
+        location,
+        details: ItemDetails::Struct(StructDetails { methods }),
+    })
+}
+
+fn extract_other_item_info(item: ast::Item, full_source: &str) -> Option<ItemInfo> {
+    let syntax = item.syntax();
+    let full_code = syntax.text().to_string();
+    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let doc_comment = extract_doc_comment(syntax, full_source);
+    
+    let (name, item_type) = match &item {
+        ast::Item::Enum(e) => (e.name()?.text().to_string(), "enum".to_string()),
+        ast::Item::Use(u) => (u.use_tree()?.syntax().text().to_string(), "use".to_string()),
+        ast::Item::Const(c) => (c.name()?.text().to_string(), "const".to_string()),
+        ast::Item::Static(s) => (s.name()?.text().to_string(), "static".to_string()),
+        ast::Item::TypeAlias(t) => (t.name()?.text().to_string(), "type_alias".to_string()),
+        ast::Item::Impl(i) => {
+            let impl_type = i.self_ty()?.syntax().text().to_string();
+            let trait_name = i.trait_().map(|t| t.syntax().text().to_string());
+            let name = trait_name
+                .as_ref()
+                .map(|t| format!("{t} for {impl_type}"))
+                .unwrap_or(impl_type);
+            (name, "impl".to_string())
+        }
+        _ => ("unknown".to_string(), "unknown".to_string()),
+    };
+    
+    Some(ItemInfo {
+        name,
+        full_code,
+        doc_comment,
+        location,
+        details: ItemDetails::Other(OtherDetails { item_type }),
+    })
+}
+
+fn extract_trait_methods(trait_item: &ast::Trait, full_source: &str) -> Vec<TraitMethodInfo> {
+    let mut methods = Vec::new();
+    
+    if let Some(assoc_item_list) = trait_item.assoc_item_list() {
+        for item in assoc_item_list.assoc_items() {
+            if let ast::AssocItem::Fn(func) = item {
+                if let Some(name) = func.name() {
+                    let syntax = func.syntax();
+                    let location = text_range_to_location(syntax.text_range(), &syntax.text().to_string());
+                    let doc_comment = extract_doc_comment(syntax, full_source);
+                    
+                    // Extract just the signature (everything before the body if it exists)
+                    let signature = if let Some(body) = func.body() {
+                        let body_start = body.syntax().text_range().start();
+                        let func_start = syntax.text_range().start();
+                        let signature_end = (body_start - func_start).into();
+                        let full_text = syntax.text().to_string();
+                        full_text[..signature_end].trim_end().to_string()
+                    } else {
+                        syntax.text().to_string()
+                    };
+                    
+                    methods.push(TraitMethodInfo {
                         name: name.text().to_string(),
-                        field_type,
-                        visibility,
+                        signature,
+                        doc_comment,
+                        location,
                     });
                 }
             }
         }
-        Some(ast::FieldList::TupleFieldList(tuple_fields)) => {
-            for (i, field) in tuple_fields.fields().enumerate() {
-                let field_type = field
-                    .ty()
-                    .map(|t| t.syntax().text().to_string())
-                    .unwrap_or_default();
-                let visibility = extract_visibility(field.visibility());
-
-                fields.push(FieldInfo {
-                    name: i.to_string(),
-                    field_type,
-                    visibility,
-                });
-            }
-        }
-        None => {}
     }
-
-    fields
+    
+    methods
 }
 
-fn extract_enum_variants(e: &ast::Enum) -> Vec<VariantInfo> {
-    let mut variants = Vec::new();
-
-    if let Some(variant_list) = e.variant_list() {
-        for variant in variant_list.variants() {
-            if let Some(name) = variant.name() {
-                let discriminant = variant.expr().map(|e| e.syntax().text().to_string());
-
-                variants.push(VariantInfo {
-                    name: name.text().to_string(),
-                    discriminant,
-                });
-            }
-        }
-    }
-
-    variants
-}
-
-fn extract_generic_params(generic_params: Option<ast::GenericParamList>) -> Vec<String> {
-    let mut params = Vec::new();
-
-    if let Some(param_list) = generic_params {
-        for param in param_list.generic_params() {
-            match param {
-                ast::GenericParam::TypeParam(type_param) => {
-                    if let Some(name) = type_param.name() {
-                        params.push(name.text().to_string());
-                    }
-                }
-                ast::GenericParam::LifetimeParam(lifetime_param) => {
-                    if let Some(lifetime) = lifetime_param.lifetime() {
-                        params.push(lifetime.text().to_string());
-                    }
-                }
-                ast::GenericParam::ConstParam(const_param) => {
-                    if let Some(name) = const_param.name() {
-                        params.push(name.text().to_string());
+fn extract_struct_methods(struct_name: &str, full_source: &str) -> Vec<ItemInfo> {
+    let mut methods = Vec::new();
+    
+    // Parse the full source to find impl blocks for this struct
+    let parsed = SourceFile::parse(full_source, ra_ap_syntax::Edition::Edition2024);
+    let source_file = parsed.tree();
+    
+    for item in source_file.items() {
+        if let ast::Item::Impl(impl_item) = item {
+            if let Some(self_ty) = impl_item.self_ty() {
+                let impl_type = self_ty.syntax().text().to_string();
+                // Simple name matching - could be improved for generic types
+                if impl_type.contains(struct_name) {
+                    if let Some(assoc_item_list) = impl_item.assoc_item_list() {
+                        for assoc_item in assoc_item_list.assoc_items() {
+                            if let ast::AssocItem::Fn(func) = assoc_item {
+                                if is_item_public(func.visibility()) {
+                                    if let Some(func_info) = extract_function_info(func, full_source) {
+                                        methods.push(func_info);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
-
-    params
+    
+    methods
 }
 
-fn extract_attributes<N: AstNode>(node: &N) -> Vec<String> {
-    let mut attributes = Vec::new();
-    let syntax = node.syntax();
+fn get_item_visibility(item: &ast::Item) -> Option<ast::Visibility> {
+    match item {
+        ast::Item::Fn(f) => f.visibility(),
+        ast::Item::Struct(s) => s.visibility(),
+        ast::Item::Enum(e) => e.visibility(),
+        ast::Item::Trait(t) => t.visibility(),
+        ast::Item::Module(m) => m.visibility(),
+        ast::Item::Use(u) => u.visibility(),
+        ast::Item::Const(c) => c.visibility(),
+        ast::Item::Static(s) => s.visibility(),
+        ast::Item::TypeAlias(t) => t.visibility(),
+        ast::Item::Impl(_) => None, // impl blocks don't have visibility
+        _ => None,
+    }
+}
 
-    // Look for attribute items before this node
-    for child in syntax.children_with_tokens() {
-        if let Some(node) = child.as_node() {
-            if let Some(attr) = ast::Attr::cast(node.clone()) {
-                attributes.push(attr.syntax().text().to_string());
+fn extract_trait_info(t: ast::Trait, full_source: &str) -> Option<ItemInfo> {
+    let name = t.name()?.text().to_string();
+    let syntax = t.syntax();
+    let full_code = syntax.text().to_string();
+    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let doc_comment = extract_doc_comment(syntax, full_source);
+    
+    // Extract trait methods
+    let methods = extract_trait_methods(&t, full_source);
+
+    Some(ItemInfo {
+        name,
+        full_code,
+        doc_comment,
+        location,
+        details: ItemDetails::Trait(TraitDetails { methods }),
+    })
+}
+
+// We no longer extract impl blocks as separate items since they're part of struct methods
+
+fn extract_module_item_info(m: ast::Module, full_source: &str) -> Option<ItemInfo> {
+    let name = m.name()?.text().to_string();
+    let syntax = m.syntax();
+    let full_code = syntax.text().to_string();
+    let location = text_range_to_location(syntax.text_range(), &full_code);
+    let doc_comment = extract_doc_comment(syntax, full_source);
+    
+    // Extract nested items from the module
+    let mut items = Vec::new();
+    if let Some(item_list) = m.item_list() {
+        for item in item_list.items() {
+            if is_item_public(get_item_visibility(&item)) {
+                if let Some(item_info) = extract_item_info(item, full_source) {
+                    items.push(item_info);
+                }
             }
         }
     }
 
-    attributes
+    Some(ItemInfo {
+        name,
+        full_code,
+        doc_comment,
+        location,
+        details: ItemDetails::Module(ModuleDetails { items }),
+    })
 }
+
+// We no longer extract use statements as they're not in our focus
+
+// We no longer extract const items as they're not in our focus
+
+// We no longer extract static items as they're not in our focus
+
+// We no longer extract type aliases as they're not in our focus
+
+// Removed unused extract_visibility function
+
+// Removed old extraction functions that are no longer needed
+
+// Removed old attribute extraction function
 
 fn text_range_to_location(range: TextRange, source: &str) -> SourceLocation {
     let start = range.start().into();
@@ -656,4 +596,67 @@ fn offset_to_line_col(source: &str, offset: u32) -> (u32, u32) {
     }
 
     (line, col)
+}
+
+fn extract_doc_comment(syntax: &ra_ap_syntax::SyntaxNode, full_source: &str) -> Option<String> {
+    let mut doc_lines = Vec::new();
+    
+    // Look at the full source around this item
+    let range = syntax.text_range();
+    let start_offset = range.start().into();
+    
+    // Look backwards in the source for doc comments
+    let lines: Vec<&str> = full_source[..start_offset].lines().collect();
+    for line in lines.iter().rev() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("///") {
+            let content = trimmed.trim_start_matches("///").trim();
+            doc_lines.insert(0, content.to_string());
+        } else if trimmed.is_empty() {
+            // Empty line, might have more doc comments above
+            continue;
+        } else {
+            // Non-doc line, stop looking
+            break;
+        }
+    }
+    
+    // Also check for doc attributes like #[doc = "..."]  
+    for attr_text in extract_attributes_from_syntax(syntax) {
+        if attr_text.starts_with("#[doc") {
+            // Simple extraction of doc attribute content
+            if let Some(start) = attr_text.find('"') {
+                if let Some(end) = attr_text.rfind('"') {
+                    if start < end {
+                        doc_lines.push(attr_text[start + 1..end].to_string());
+                    }
+                }
+            }
+        }
+    }
+    
+    if doc_lines.is_empty() {
+        None
+    } else {
+        Some(doc_lines.join("\n"))
+    }
+}
+
+fn extract_attributes_from_syntax(syntax: &ra_ap_syntax::SyntaxNode) -> Vec<String> {
+    let mut attributes = Vec::new();
+    
+    // Look for attribute nodes that are siblings before this node
+    let mut current = syntax.clone();
+    while let Some(prev) = current.prev_sibling() {
+        current = prev;
+        if let Some(attr) = ast::Attr::cast(current.clone()) {
+            attributes.push(attr.syntax().text().to_string());
+        } else if !current.kind().is_trivia() {
+            // Stop if we hit a non-trivia, non-attribute node
+            break;
+        }
+    }
+    
+    attributes.reverse();
+    attributes
 }
