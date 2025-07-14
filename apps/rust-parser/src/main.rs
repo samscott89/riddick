@@ -8,12 +8,13 @@ use parser::parse_rust_code;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
-        eprintln!("Usage: {} <rust_file_path>", args[0]);
+    if args.len() < 2 {
+        eprintln!("Usage: {} <rust_file_path> [--include-private]", args[0]);
         std::process::exit(1);
     }
 
     let file_path = &args[1];
+    let include_private = args.get(2).is_some_and(|arg| arg == "--include-private");
 
     if !Path::new(file_path).exists() {
         eprintln!("Error: File '{file_path}' does not exist");
@@ -28,7 +29,8 @@ fn main() {
         }
     };
 
-    match parse_rust_code(&code) {
+    match parse_rust_code(&code, include_private) {
+        // Include private items by default for CLI
         Ok(response) => {
             // Pretty print the JSON output
             match serde_json::to_string_pretty(&response) {

@@ -31,7 +31,7 @@ pub fn parse_rust_code(request: JsValue) -> Result<JsValue> {
     let request: ParseRequest = serde_wasm_bindgen::from_value(request)?;
     tracing::info!("Received parse request");
     // Call the parser function
-    let response = parser::parse_rust_code(&request.code)?;
+    let response = parser::parse_rust_code(&request.code, request.include_private)?;
 
     Ok(serde_wasm_bindgen::to_value(&response)?)
 }

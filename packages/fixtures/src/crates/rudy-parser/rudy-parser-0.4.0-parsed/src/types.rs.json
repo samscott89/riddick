@@ -1,114 +1,55 @@
 {
   "success": true,
   "parseTime": 100,
-  "crateInfo": {
-    "name": "unnamed",
-    "modules": [
+  "fileInfo": {
+    "items": [
       {
-        "name": "main",
-        "path": "main.rs",
-        "items": [
-          {
-            "name": "ParsedSymbol",
-            "fullCode": "pub type ParsedSymbol = (Vec<String>, String, Option<String>);",
-            "docComment": null,
-            "location": [
-              9719,
-              9781
-            ],
-            "details": {
-              "other": {
-                "itemType": "type_alias"
-              }
-            }
-          },
-          {
-            "name": "parse_symbol",
-            "fullCode": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol> {\n    // First, we need to split the string by `::` while respecting angle brackets\n    let mut segments = Vec::with_capacity(4);\n    let mut current_segment = String::with_capacity(64);\n    let mut angle_depth = 0;\n    let mut chars = s.chars().peekable();\n\n    while let Some(ch) = chars.next() {\n        match ch {\n            '<' => {\n                angle_depth += 1;\n                current_segment.push(ch);\n            }\n            '>' => {\n                angle_depth -= 1;\n                current_segment.push(ch);\n            }\n            ':' if angle_depth == 0 && chars.peek() == Some(&':') => {\n                // We found `::` at the top level\n                chars.next(); // consume the second ':'\n                if !current_segment.is_empty() {\n                    segments.push(current_segment.trim().to_string());\n                    current_segment.clear();\n                }\n            }\n            '\\n' | '\\r' | '\\t' | ' ' => {\n                // Ignore consecutive whitespace characters\n                // and replace with a single space character\n                if !current_segment.is_empty() && !current_segment.ends_with(' ') {\n                    current_segment.push(' ');\n                }\n            }\n            _ => {\n                current_segment.push(ch);\n            }\n        }\n    }\n\n    // Don't forget the last segment\n    if !current_segment.is_empty() {\n        segments.push(current_segment.trim().to_string());\n    }\n\n    if segments.is_empty() {\n        anyhow::bail!(\"Empty symbol path\");\n    }\n\n    // Now we need to identify the hash, function name, and module path\n    let hash = if let Some(last) = segments.last() {\n        if last.starts_with('h') && last.chars().skip(1).all(|c| c.is_ascii_hexdigit()) {\n            segments.pop()\n        } else {\n            None\n        }\n    } else {\n        None\n    };\n\n    let Some(function_name) = segments.pop() else {\n        anyhow::bail!(\"No function name found\");\n    };\n\n    segments.shrink_to_fit();\n    let module_path = segments;\n\n    Ok((module_path, function_name, hash))\n}",
-            "docComment": null,
-            "location": [
-              9783,
-              12480
-            ],
-            "details": {
-              "function": {
-                "signature": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol>"
-              }
-            }
-          },
-          {
-            "name": "parse_type",
-            "fullCode": "pub fn parse_type(s: &str) -> unsynn::Result<Type> {\n    let mut iter = s.to_token_iter();\n    let ty = Cons::<Type, EndOfStream>::parse(&mut iter)?;\n    Ok(ty.first)\n}",
-            "docComment": null,
-            "location": [
-              12482,
-              12650
-            ],
-            "details": {
-              "function": {
-                "signature": "pub fn parse_type(s: &str) -> unsynn::Result<Type>"
-              }
-            }
-          }
-        ],
+        "name": "ParsedSymbol",
+        "fullCode": "pub type ParsedSymbol = (Vec<String>, String, Option<String>);",
+        "docComment": null,
+        "visibility": "pub",
         "location": [
-          0,
-          43491
-        ]
-      }
-    ],
-    "rootModule": {
-      "name": "main",
-      "path": "main.rs",
-      "items": [
-        {
-          "name": "ParsedSymbol",
-          "fullCode": "pub type ParsedSymbol = (Vec<String>, String, Option<String>);",
-          "docComment": null,
-          "location": [
-            9719,
-            9781
-          ],
-          "details": {
-            "other": {
-              "itemType": "type_alias"
-            }
-          }
-        },
-        {
-          "name": "parse_symbol",
-          "fullCode": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol> {\n    // First, we need to split the string by `::` while respecting angle brackets\n    let mut segments = Vec::with_capacity(4);\n    let mut current_segment = String::with_capacity(64);\n    let mut angle_depth = 0;\n    let mut chars = s.chars().peekable();\n\n    while let Some(ch) = chars.next() {\n        match ch {\n            '<' => {\n                angle_depth += 1;\n                current_segment.push(ch);\n            }\n            '>' => {\n                angle_depth -= 1;\n                current_segment.push(ch);\n            }\n            ':' if angle_depth == 0 && chars.peek() == Some(&':') => {\n                // We found `::` at the top level\n                chars.next(); // consume the second ':'\n                if !current_segment.is_empty() {\n                    segments.push(current_segment.trim().to_string());\n                    current_segment.clear();\n                }\n            }\n            '\\n' | '\\r' | '\\t' | ' ' => {\n                // Ignore consecutive whitespace characters\n                // and replace with a single space character\n                if !current_segment.is_empty() && !current_segment.ends_with(' ') {\n                    current_segment.push(' ');\n                }\n            }\n            _ => {\n                current_segment.push(ch);\n            }\n        }\n    }\n\n    // Don't forget the last segment\n    if !current_segment.is_empty() {\n        segments.push(current_segment.trim().to_string());\n    }\n\n    if segments.is_empty() {\n        anyhow::bail!(\"Empty symbol path\");\n    }\n\n    // Now we need to identify the hash, function name, and module path\n    let hash = if let Some(last) = segments.last() {\n        if last.starts_with('h') && last.chars().skip(1).all(|c| c.is_ascii_hexdigit()) {\n            segments.pop()\n        } else {\n            None\n        }\n    } else {\n        None\n    };\n\n    let Some(function_name) = segments.pop() else {\n        anyhow::bail!(\"No function name found\");\n    };\n\n    segments.shrink_to_fit();\n    let module_path = segments;\n\n    Ok((module_path, function_name, hash))\n}",
-          "docComment": null,
-          "location": [
-            9783,
-            12480
-          ],
-          "details": {
-            "function": {
-              "signature": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol>"
-            }
-          }
-        },
-        {
-          "name": "parse_type",
-          "fullCode": "pub fn parse_type(s: &str) -> unsynn::Result<Type> {\n    let mut iter = s.to_token_iter();\n    let ty = Cons::<Type, EndOfStream>::parse(&mut iter)?;\n    Ok(ty.first)\n}",
-          "docComment": null,
-          "location": [
-            12482,
-            12650
-          ],
-          "details": {
-            "function": {
-              "signature": "pub fn parse_type(s: &str) -> unsynn::Result<Type>"
-            }
+          9719,
+          9781
+        ],
+        "details": {
+          "other": {
+            "itemType": "type_alias"
           }
         }
-      ],
-      "location": [
-        0,
-        43491
-      ]
-    }
+      },
+      {
+        "name": "parse_symbol",
+        "fullCode": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol> {\n    // First, we need to split the string by `::` while respecting angle brackets\n    let mut segments = Vec::with_capacity(4);\n    let mut current_segment = String::with_capacity(64);\n    let mut angle_depth = 0;\n    let mut chars = s.chars().peekable();\n\n    while let Some(ch) = chars.next() {\n        match ch {\n            '<' => {\n                angle_depth += 1;\n                current_segment.push(ch);\n            }\n            '>' => {\n                angle_depth -= 1;\n                current_segment.push(ch);\n            }\n            ':' if angle_depth == 0 && chars.peek() == Some(&':') => {\n                // We found `::` at the top level\n                chars.next(); // consume the second ':'\n                if !current_segment.is_empty() {\n                    segments.push(current_segment.trim().to_string());\n                    current_segment.clear();\n                }\n            }\n            '\\n' | '\\r' | '\\t' | ' ' => {\n                // Ignore consecutive whitespace characters\n                // and replace with a single space character\n                if !current_segment.is_empty() && !current_segment.ends_with(' ') {\n                    current_segment.push(' ');\n                }\n            }\n            _ => {\n                current_segment.push(ch);\n            }\n        }\n    }\n\n    // Don't forget the last segment\n    if !current_segment.is_empty() {\n        segments.push(current_segment.trim().to_string());\n    }\n\n    if segments.is_empty() {\n        anyhow::bail!(\"Empty symbol path\");\n    }\n\n    // Now we need to identify the hash, function name, and module path\n    let hash = if let Some(last) = segments.last() {\n        if last.starts_with('h') && last.chars().skip(1).all(|c| c.is_ascii_hexdigit()) {\n            segments.pop()\n        } else {\n            None\n        }\n    } else {\n        None\n    };\n\n    let Some(function_name) = segments.pop() else {\n        anyhow::bail!(\"No function name found\");\n    };\n\n    segments.shrink_to_fit();\n    let module_path = segments;\n\n    Ok((module_path, function_name, hash))\n}",
+        "docComment": null,
+        "visibility": "pub",
+        "location": [
+          9783,
+          12480
+        ],
+        "details": {
+          "function": {
+            "signature": "/// A simpler parsing approach for symbols\n///\n/// All we truly care about is splitting it into:\n///\n/// - the module path prefix\n/// - the type name\n/// - the hash (if present)\n///\n/// e.g. `core::num::nonzero::NonZero<u8>::ilog2::hc1106854ed63a858`\n/// would be parsed into:\n/// - `[\"core\", \"num\", \"nonzero\", \"NonZero<u8>\"]`\n/// - `ilog2`\n/// - `Some(\"hc1106854ed63a858\")`\n///\n/// We can do that without incurring the parsing overhead of the full\n/// `Path` and `Type` parsers, which are more complex and handle\n/// more cases than we need here.\npub fn parse_symbol(s: &str) -> anyhow::Result<ParsedSymbol>"
+          }
+        }
+      },
+      {
+        "name": "parse_type",
+        "fullCode": "pub fn parse_type(s: &str) -> unsynn::Result<Type> {\n    let mut iter = s.to_token_iter();\n    let ty = Cons::<Type, EndOfStream>::parse(&mut iter)?;\n    Ok(ty.first)\n}",
+        "docComment": null,
+        "visibility": "pub",
+        "location": [
+          12482,
+          12650
+        ],
+        "details": {
+          "function": {
+            "signature": "pub fn parse_type(s: &str) -> unsynn::Result<Type>"
+          }
+        }
+      }
+    ],
+    "moduleReferences": []
   },
   "errors": []
 }

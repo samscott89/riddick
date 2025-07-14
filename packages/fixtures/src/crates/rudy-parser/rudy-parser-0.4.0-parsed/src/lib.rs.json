@@ -1,142 +1,65 @@
 {
   "success": true,
   "parseTime": 100,
-  "crateInfo": {
-    "name": "unnamed",
-    "modules": [
+  "fileInfo": {
+    "items": [
       {
-        "name": "main",
-        "path": "main.rs",
-        "items": [
-          {
-            "name": "expressions",
-            "fullCode": "pub mod expressions;",
-            "docComment": null,
-            "location": [
-              252,
-              272
-            ],
-            "details": {
-              "module": {
-                "items": []
-              }
-            }
-          },
-          {
-            "name": "types",
-            "fullCode": "pub mod types;",
-            "docComment": null,
-            "location": [
-              273,
-              287
-            ],
-            "details": {
-              "module": {
-                "items": []
-              }
-            }
-          },
-          {
-            "name": "expressions::{Expression, parse_expression}",
-            "fullCode": "pub use expressions::{Expression, parse_expression};",
-            "docComment": null,
-            "location": [
-              289,
-              341
-            ],
-            "details": {
-              "other": {
-                "itemType": "use"
-              }
-            }
-          },
-          {
-            "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
-            "fullCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
-            "docComment": null,
-            "location": [
-              342,
-              410
-            ],
-            "details": {
-              "other": {
-                "itemType": "use"
-              }
-            }
-          }
-        ],
+        "name": "expressions::{Expression, parse_expression}",
+        "fullCode": "pub use expressions::{Expression, parse_expression};",
+        "docComment": null,
+        "visibility": "pub",
         "location": [
-          0,
-          411
-        ]
-      }
-    ],
-    "rootModule": {
-      "name": "main",
-      "path": "main.rs",
-      "items": [
-        {
-          "name": "expressions",
-          "fullCode": "pub mod expressions;",
-          "docComment": null,
-          "location": [
-            252,
-            272
-          ],
-          "details": {
-            "module": {
-              "items": []
-            }
-          }
-        },
-        {
-          "name": "types",
-          "fullCode": "pub mod types;",
-          "docComment": null,
-          "location": [
-            273,
-            287
-          ],
-          "details": {
-            "module": {
-              "items": []
-            }
-          }
-        },
-        {
-          "name": "expressions::{Expression, parse_expression}",
-          "fullCode": "pub use expressions::{Expression, parse_expression};",
-          "docComment": null,
-          "location": [
-            289,
-            341
-          ],
-          "details": {
-            "other": {
-              "itemType": "use"
-            }
-          }
-        },
-        {
-          "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
-          "fullCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
-          "docComment": null,
-          "location": [
-            342,
-            410
-          ],
-          "details": {
-            "other": {
-              "itemType": "use"
-            }
+          289,
+          341
+        ],
+        "details": {
+          "other": {
+            "itemType": "use"
           }
         }
-      ],
-      "location": [
-        0,
-        411
-      ]
-    }
+      },
+      {
+        "name": "types::{ParsedSymbol, Path, Type, parse_symbol, parse_type}",
+        "fullCode": "pub use types::{ParsedSymbol, Path, Type, parse_symbol, parse_type};",
+        "docComment": null,
+        "visibility": "pub",
+        "location": [
+          342,
+          410
+        ],
+        "details": {
+          "other": {
+            "itemType": "use"
+          }
+        }
+      }
+    ],
+    "moduleReferences": [
+      {
+        "name": "expressions",
+        "visibility": "pub",
+        "expectedPaths": [
+          "expressions.rs",
+          "expressions/mod.rs"
+        ],
+        "location": [
+          252,
+          272
+        ]
+      },
+      {
+        "name": "types",
+        "visibility": "pub",
+        "expectedPaths": [
+          "types.rs",
+          "types/mod.rs"
+        ],
+        "location": [
+          273,
+          287
+        ]
+      }
+    ]
   },
   "errors": []
 }

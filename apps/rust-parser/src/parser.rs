@@ -10,6 +10,8 @@ use ts_rs::TS;
 #[serde(rename_all = "camelCase")]
 pub struct ParseRequest {
     pub code: String,
+    pub file_path: Option<String>, // Optional file path for context
+    pub include_private: bool, // Whether to include private items
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -18,17 +20,16 @@ pub struct ParseRequest {
 pub struct ParseResponse {
     pub success: bool,
     pub parse_time: u64,
-    pub crate_info: Option<CrateInfo>,
+    pub file_info: Option<FileInfo>,
     pub errors: Vec<ParseError>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct CrateInfo {
-    pub name: String,
-    pub modules: Vec<ModuleInfo>,
-    pub root_module: ModuleInfo,
+pub struct FileInfo {
+    pub items: Vec<ItemInfo>, // All items including inline modules
+    pub module_references: Vec<ModuleReference>, // Modules declared with `mod foo;`
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -36,9 +37,20 @@ pub struct CrateInfo {
 #[serde(rename_all = "camelCase")]
 pub struct ModuleInfo {
     pub name: String,
-    pub path: String,
-    pub items: Vec<ItemInfo>,
-    pub location: [u32; 2], // [start_byte, end_byte]
+    pub items: Vec<ItemInfo>, // Non-module items (functions, structs, etc.)
+    pub inline_modules: Vec<ModuleInfo>, // Nested inline modules
+    pub module_references: Vec<ModuleReference>, // Referenced modules
+    pub location: [u32; 2], // [start_byte, end_byte] in the file
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ModuleReference {
+    pub name: String,
+    pub visibility: String, // "pub", "pub(crate)", "private", etc.
+    pub expected_paths: Vec<String>, // Potential file paths (foo.rs, foo/mod.rs)
+    pub location: [u32; 2], // [start_byte, end_byte] in the file
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -48,6 +60,7 @@ pub struct ItemInfo {
     pub name: String,
     pub full_code: String,
     pub doc_comment: Option<String>,
+    pub visibility: String, // "pub", "pub(crate)", "pub(super)", "private", etc.
     pub location: [u32; 2], // [start_byte, end_byte]
     pub details: ItemDetails,
 }
@@ -88,7 +101,8 @@ pub struct TraitDetails {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ModuleDetails {
-    pub items: Vec<ItemInfo>,
+    pub items: Vec<ItemInfo>, // Items within the inline module
+    pub module_references: Vec<ModuleReference>, // Module references within this module
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -120,7 +134,7 @@ pub struct ParseError {
     pub location: Option<[u32; 2]>, // [start_byte, end_byte]
 }
 
-pub fn parse_rust_code(code: &str) -> Result<ParseResponse, String> {
+pub fn parse_rust_code(code: &str, include_private: bool) -> Result<ParseResponse, String> {
     let parsed = SourceFile::parse(code, ra_ap_syntax::Edition::Edition2024);
     let _syntax_node = parsed.syntax_node();
 
@@ -138,194 +152,175 @@ pub fn parse_rust_code(code: &str) -> Result<ParseResponse, String> {
         })
         .collect();
 
-    // Extract module information
+    // Extract file information
     let source_file = parsed.tree();
-    let root_module = extract_module_info(&source_file, "main", "main.rs", code);
-    
-    // Collect all modules recursively
-    let mut all_modules = vec![root_module.clone()];
-    collect_modules_recursive(&source_file, "main", &mut all_modules, code);
-
-    let crate_info = CrateInfo {
-        name: "unnamed".to_string(),
-        modules: all_modules,
-        root_module,
-    };
+    let file_info = extract_file_info(&source_file, code, include_private);
 
     Ok(ParseResponse {
         success: errors.is_empty(),
         parse_time: 100,
-        crate_info: Some(crate_info),
+        file_info: Some(file_info),
         errors,
     })
 }
 
-fn extract_module_info(source_file: &SourceFile, name: &str, path: &str, full_source: &str) -> ModuleInfo {
+fn extract_file_info(source_file: &SourceFile, full_source: &str, include_private: bool) -> FileInfo {
     let mut items = Vec::new();
+    let mut module_references = Vec::new();
 
     for item in source_file.items() {
-        // Only include public items
-        let is_public = match &item {
-            ast::Item::Fn(f) => is_item_public(f.visibility()),
-            ast::Item::Struct(s) => is_item_public(s.visibility()),
-            ast::Item::Enum(e) => is_item_public(e.visibility()),
-            ast::Item::Trait(t) => is_item_public(t.visibility()),
-            ast::Item::Module(m) => is_item_public(m.visibility()),
-            ast::Item::Use(u) => is_item_public(u.visibility()),
-            ast::Item::Const(c) => is_item_public(c.visibility()),
-            ast::Item::Static(s) => is_item_public(s.visibility()),
-            ast::Item::TypeAlias(t) => is_item_public(t.visibility()),
-            _ => false,
-        };
-        
-        if is_public {
-            if let Some(item_info) = extract_item_info(item, full_source) {
-                items.push(item_info);
+        match &item {
+            ast::Item::Module(module) => {
+                if should_include_item(module.visibility(), include_private) {
+                    if let Some(name) = module.name() {
+                        let module_name = name.text().to_string();
+                        let location = text_range_to_byte_offsets(module.syntax().text_range());
+                        
+                        if module.item_list().is_some() {
+                            // Inline module: mod foo { ... } - treat as regular item
+                            if let Some(item_info) = extract_item_info(item.clone(), full_source, include_private) {
+                                items.push(item_info);
+                            }
+                        } else {
+                            // Module reference: mod foo;
+                            let expected_paths = vec![
+                                format!("{}.rs", module_name),
+                                format!("{}/mod.rs", module_name),
+                            ];
+                            
+                            module_references.push(ModuleReference {
+                                name: module_name,
+                                visibility: extract_visibility(module.visibility()),
+                                expected_paths,
+                                location,
+                            });
+                        }
+                    }
+                }
+            },
+            _ => {
+                // Check visibility before including item
+                if should_include_item(get_item_visibility(&item), include_private) {
+                    if let Some(item_info) = extract_item_info(item.clone(), full_source, include_private) {
+                        items.push(item_info);
+                    }
+                }
             }
         }
     }
 
-    let syntax = source_file.syntax();
-    let location = text_range_to_byte_offsets(syntax.text_range());
-
-    ModuleInfo {
-        name: name.to_string(),
-        path: path.to_string(),
+    FileInfo {
         items,
-        location,
+        module_references,
     }
 }
 
-fn is_item_public(vis: Option<ast::Visibility>) -> bool {
-    match vis {
-        Some(v) => v.syntax().text().to_string().contains("pub"),
-        None => false,
-    }
-}
-
-fn collect_modules_recursive(source_file: &SourceFile, parent_path: &str, modules: &mut Vec<ModuleInfo>, full_source: &str) {
-    for item in source_file.items() {
-        if let ast::Item::Module(module) = item {
-            if is_item_public(module.visibility()) {
-                if let Some(name) = module.name() {
-                    let module_name = name.text().to_string();
-                    let module_path = format!("{parent_path}::{module_name}");
-                    
-                    // Process inline modules
-                    if let Some(item_list) = module.item_list() {
-                        let mut module_items = Vec::new();
-                        
-                        for item in item_list.items() {
-                            let is_public = match &item {
-                                ast::Item::Fn(f) => is_item_public(f.visibility()),
-                                ast::Item::Struct(s) => is_item_public(s.visibility()),
-                                ast::Item::Enum(e) => is_item_public(e.visibility()),
-                                ast::Item::Trait(t) => is_item_public(t.visibility()),
-                                ast::Item::Module(m) => is_item_public(m.visibility()),
-                                ast::Item::Use(u) => is_item_public(u.visibility()),
-                                ast::Item::Const(c) => is_item_public(c.visibility()),
-                                ast::Item::Static(s) => is_item_public(s.visibility()),
-                                ast::Item::TypeAlias(t) => is_item_public(t.visibility()),
-                                _ => false,
-                            };
+fn extract_module_info(module: &ast::Module, full_source: &str, include_private: bool) -> Option<ItemInfo> {
+    let name = module.name()?.text().to_string();
+    let syntax = module.syntax();
+    let full_code = syntax.text().to_string();
+    let location = text_range_to_byte_offsets(syntax.text_range());
+    let doc_comment = extract_doc_comment(syntax, full_source);
+    let visibility = extract_visibility(module.visibility());
+    
+    // Only handle inline modules here (mod foo { ... })
+    if let Some(item_list) = module.item_list() {
+        let mut items = Vec::new();
+        let mut module_references = Vec::new();
+        
+        for item in item_list.items() {
+            match &item {
+                ast::Item::Module(nested_module) => {
+                    if should_include_item(nested_module.visibility(), include_private) {
+                        if let Some(nested_name) = nested_module.name() {
+                            let nested_location = text_range_to_byte_offsets(nested_module.syntax().text_range());
                             
-                            if is_public {
-                                if let Some(item_info) = extract_item_info(item.clone(), full_source) {
-                                    module_items.push(item_info);
+                            if nested_module.item_list().is_some() {
+                                // Nested inline module
+                                if let Some(nested_item) = extract_item_info(item.clone(), full_source, include_private) {
+                                    items.push(nested_item);
                                 }
-                            }
-                            
-                            // Recursively process submodules
-                            if let ast::Item::Module(submodule) = item {
-                                if is_item_public(submodule.visibility()) {
-                                    if let Some(submodule_name) = submodule.name() {
-                                        let submodule_path = format!("{module_path}::{}", submodule_name.text());
-                                        if let Some(submodule_items) = submodule.item_list() {
-                                            collect_module_items_recursive(&submodule_items, &submodule_path, modules, full_source);
-                                        }
-                                    }
-                                }
+                            } else {
+                                // Nested module reference
+                                let nested_name_str = nested_name.text().to_string();
+                                let expected_paths = vec![
+                                    format!("{}/{}.rs", name, nested_name_str),
+                                    format!("{}/{}/mod.rs", name, nested_name_str),
+                                ];
+                                
+                                module_references.push(ModuleReference {
+                                    name: nested_name_str,
+                                    visibility: extract_visibility(nested_module.visibility()),
+                                    expected_paths,
+                                    location: nested_location,
+                                });
                             }
                         }
-                        
-                        let syntax = module.syntax();
-                        let location = text_range_to_byte_offsets(syntax.text_range());
-                        
-                        modules.push(ModuleInfo {
-                            name: module_name,
-                            path: module_path,
-                            items: module_items,
-                            location,
-                        });
+                    }
+                },
+                _ => {
+                    // Check visibility before including item
+                    if should_include_item(get_item_visibility(&item), include_private) {
+                        if let Some(item_info) = extract_item_info(item.clone(), full_source, include_private) {
+                            items.push(item_info);
+                        }
                     }
                 }
             }
         }
+        
+        Some(ItemInfo {
+            name,
+            full_code,
+            doc_comment,
+            visibility,
+            location,
+            details: ItemDetails::Module(ModuleDetails { items, module_references }),
+        })
+    } else {
+        // Module reference (mod foo;) - shouldn't be handled here
+        None
     }
 }
 
-fn collect_module_items_recursive(item_list: &ast::ItemList, parent_path: &str, modules: &mut Vec<ModuleInfo>, full_source: &str) {
-    for item in item_list.items() {
-        if let ast::Item::Module(module) = item {
-            if is_item_public(module.visibility()) {
-                if let Some(name) = module.name() {
-                    let module_name = name.text().to_string();
-                    let module_path = format!("{parent_path}::{module_name}");
-                    
-                    if let Some(item_list) = module.item_list() {
-                        let mut module_items = Vec::new();
-                        
-                        for item in item_list.items() {
-                            let is_public = match &item {
-                                ast::Item::Fn(f) => is_item_public(f.visibility()),
-                                ast::Item::Struct(s) => is_item_public(s.visibility()),
-                                ast::Item::Enum(e) => is_item_public(e.visibility()),
-                                ast::Item::Trait(t) => is_item_public(t.visibility()),
-                                ast::Item::Module(m) => is_item_public(m.visibility()),
-                                ast::Item::Use(u) => is_item_public(u.visibility()),
-                                ast::Item::Const(c) => is_item_public(c.visibility()),
-                                ast::Item::Static(s) => is_item_public(s.visibility()),
-                                ast::Item::TypeAlias(t) => is_item_public(t.visibility()),
-                                _ => false,
-                            };
-                            
-                            if is_public {
-                                if let Some(item_info) = extract_item_info(item.clone(), full_source) {
-                                    module_items.push(item_info);
-                                }
-                            }
-                        }
-                        
-                        let syntax = module.syntax();
-                        let location = text_range_to_byte_offsets(syntax.text_range());
-                        
-                        modules.push(ModuleInfo {
-                            name: module_name.clone(),
-                            path: module_path.clone(),
-                            items: module_items,
-                            location,
-                        });
-                        
-                        // Recursively process nested modules
-                        collect_module_items_recursive(&item_list, &module_path, modules, full_source);
-                    }
-                }
-            }
+fn should_include_item(vis: Option<ast::Visibility>, include_private: bool) -> bool {
+    if include_private {
+        true
+    } else {
+        match vis {
+            Some(v) => v.syntax().text().to_string().contains("pub"),
+            None => false,
         }
     }
 }
 
-fn extract_item_info(item: ast::Item, full_source: &str) -> Option<ItemInfo> {
+fn get_item_visibility(item: &ast::Item) -> Option<ast::Visibility> {
     match item {
-        ast::Item::Fn(func) => extract_function_info(func, full_source),
-        ast::Item::Struct(s) => extract_struct_info(s, full_source),
-        ast::Item::Trait(t) => extract_trait_info(t, full_source),
-        ast::Item::Module(m) => extract_module_item_info(m, full_source),
-        other => extract_other_item_info(other, full_source),
+        ast::Item::Fn(f) => f.visibility(),
+        ast::Item::Struct(s) => s.visibility(),
+        ast::Item::Enum(e) => e.visibility(),
+        ast::Item::Trait(t) => t.visibility(),
+        ast::Item::Module(m) => m.visibility(),
+        ast::Item::Use(u) => u.visibility(),
+        ast::Item::Const(c) => c.visibility(),
+        ast::Item::Static(s) => s.visibility(),
+        ast::Item::TypeAlias(t) => t.visibility(),
+        ast::Item::Impl(_) => None, // impl blocks don't have visibility
+        _ => None,
     }
 }
 
-fn extract_function_info(func: ast::Fn, full_source: &str) -> Option<ItemInfo> {
+fn extract_item_info(item: ast::Item, full_source: &str, include_private: bool) -> Option<ItemInfo> {
+    match item {
+        ast::Item::Fn(func) => extract_function_info(func, full_source, include_private),
+        ast::Item::Struct(s) => extract_struct_info(s, full_source, include_private),
+        ast::Item::Trait(t) => extract_trait_info(t, full_source, include_private),
+        ast::Item::Module(m) => extract_module_info(&m, full_source, include_private),
+        other => extract_other_item_info(other, full_source, include_private),
+    }
+}
+
+fn extract_function_info(func: ast::Fn, full_source: &str, _include_private: bool) -> Option<ItemInfo> {
     let name = func.name()?.text().to_string();
     let syntax = func.syntax();
     let full_code = syntax.text().to_string();
@@ -347,12 +342,13 @@ fn extract_function_info(func: ast::Fn, full_source: &str) -> Option<ItemInfo> {
         name,
         full_code,
         doc_comment,
+        visibility: extract_visibility(func.visibility()),
         location,
         details: ItemDetails::Function(FunctionDetails { signature }),
     })
 }
 
-fn extract_struct_info(s: ast::Struct, full_source: &str) -> Option<ItemInfo> {
+fn extract_struct_info(s: ast::Struct, full_source: &str, include_private: bool) -> Option<ItemInfo> {
     let name = s.name()?.text().to_string();
     let syntax = s.syntax();
     let full_code = syntax.text().to_string();
@@ -360,18 +356,19 @@ fn extract_struct_info(s: ast::Struct, full_source: &str) -> Option<ItemInfo> {
     let doc_comment = extract_doc_comment(syntax, full_source);
     
     // Find impl blocks for this struct in the source file
-    let methods = extract_struct_methods(&name, full_source);
+    let methods = extract_struct_methods(&name, full_source, include_private);
 
     Some(ItemInfo {
         name,
         full_code,
         doc_comment,
+        visibility: extract_visibility(s.visibility()),
         location,
         details: ItemDetails::Struct(StructDetails { methods }),
     })
 }
 
-fn extract_other_item_info(item: ast::Item, full_source: &str) -> Option<ItemInfo> {
+fn extract_other_item_info(item: ast::Item, full_source: &str, _include_private: bool) -> Option<ItemInfo> {
     let syntax = item.syntax();
     let full_code = syntax.text().to_string();
     let location = text_range_to_byte_offsets(syntax.text_range());
@@ -399,6 +396,7 @@ fn extract_other_item_info(item: ast::Item, full_source: &str) -> Option<ItemInf
         name,
         full_code,
         doc_comment,
+        visibility: extract_item_visibility(&item),
         location,
         details: ItemDetails::Other(OtherDetails { item_type }),
     })
@@ -440,7 +438,7 @@ fn extract_trait_methods(trait_item: &ast::Trait, full_source: &str) -> Vec<Trai
     methods
 }
 
-fn extract_struct_methods(struct_name: &str, full_source: &str) -> Vec<ItemInfo> {
+fn extract_struct_methods(struct_name: &str, full_source: &str, include_private: bool) -> Vec<ItemInfo> {
     let mut methods = Vec::new();
     
     // Parse the full source to find impl blocks for this struct
@@ -456,8 +454,8 @@ fn extract_struct_methods(struct_name: &str, full_source: &str) -> Vec<ItemInfo>
                     if let Some(assoc_item_list) = impl_item.assoc_item_list() {
                         for assoc_item in assoc_item_list.assoc_items() {
                             if let ast::AssocItem::Fn(func) = assoc_item {
-                                if is_item_public(func.visibility()) {
-                                    if let Some(func_info) = extract_function_info(func, full_source) {
+                                if should_include_item(func.visibility(), include_private) {
+                                    if let Some(func_info) = extract_function_info(func, full_source, include_private) {
                                         methods.push(func_info);
                                     }
                                 }
@@ -472,8 +470,8 @@ fn extract_struct_methods(struct_name: &str, full_source: &str) -> Vec<ItemInfo>
     methods
 }
 
-fn get_item_visibility(item: &ast::Item) -> Option<ast::Visibility> {
-    match item {
+fn extract_item_visibility(item: &ast::Item) -> String {
+    let vis = match item {
         ast::Item::Fn(f) => f.visibility(),
         ast::Item::Struct(s) => s.visibility(),
         ast::Item::Enum(e) => e.visibility(),
@@ -485,10 +483,11 @@ fn get_item_visibility(item: &ast::Item) -> Option<ast::Visibility> {
         ast::Item::TypeAlias(t) => t.visibility(),
         ast::Item::Impl(_) => None, // impl blocks don't have visibility
         _ => None,
-    }
+    };
+    extract_visibility(vis)
 }
 
-fn extract_trait_info(t: ast::Trait, full_source: &str) -> Option<ItemInfo> {
+fn extract_trait_info(t: ast::Trait, full_source: &str, _include_private: bool) -> Option<ItemInfo> {
     let name = t.name()?.text().to_string();
     let syntax = t.syntax();
     let full_code = syntax.text().to_string();
@@ -502,6 +501,7 @@ fn extract_trait_info(t: ast::Trait, full_source: &str) -> Option<ItemInfo> {
         name,
         full_code,
         doc_comment,
+        visibility: extract_visibility(t.visibility()),
         location,
         details: ItemDetails::Trait(TraitDetails { methods }),
     })
@@ -509,33 +509,7 @@ fn extract_trait_info(t: ast::Trait, full_source: &str) -> Option<ItemInfo> {
 
 // We no longer extract impl blocks as separate items since they're part of struct methods
 
-fn extract_module_item_info(m: ast::Module, full_source: &str) -> Option<ItemInfo> {
-    let name = m.name()?.text().to_string();
-    let syntax = m.syntax();
-    let full_code = syntax.text().to_string();
-    let location = text_range_to_byte_offsets(syntax.text_range());
-    let doc_comment = extract_doc_comment(syntax, full_source);
-    
-    // Extract nested items from the module
-    let mut items = Vec::new();
-    if let Some(item_list) = m.item_list() {
-        for item in item_list.items() {
-            if is_item_public(get_item_visibility(&item)) {
-                if let Some(item_info) = extract_item_info(item, full_source) {
-                    items.push(item_info);
-                }
-            }
-        }
-    }
-
-    Some(ItemInfo {
-        name,
-        full_code,
-        doc_comment,
-        location,
-        details: ItemDetails::Module(ModuleDetails { items }),
-    })
-}
+// Removed - modules handled separately in FileInfo
 
 // We no longer extract use statements as they're not in our focus
 
@@ -545,7 +519,25 @@ fn extract_module_item_info(m: ast::Module, full_source: &str) -> Option<ItemInf
 
 // We no longer extract type aliases as they're not in our focus
 
-// Removed unused extract_visibility function
+fn extract_visibility(vis: Option<ast::Visibility>) -> String {
+    match vis {
+        Some(v) => {
+            let text = v.syntax().text().to_string();
+            if text.contains("pub(crate)") {
+                "pub(crate)".to_string()
+            } else if text.contains("pub(super)") {
+                "pub(super)".to_string()
+            } else if text.contains("pub(in") {
+                "pub(in path)".to_string()
+            } else if text.contains("pub") {
+                "pub".to_string()
+            } else {
+                "private".to_string()
+            }
+        }
+        None => "private".to_string(),
+    }
+}
 
 // Removed old extraction functions that are no longer needed
 
