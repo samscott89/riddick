@@ -4,6 +4,7 @@ import {
   type WorkflowEvent,
 } from 'cloudflare:workers'
 import { DatabaseService } from '@riddick/database'
+import type { FileInfo } from '@riddick/types'
 import {
   CrateStatus,
   type QueueMessage,
@@ -102,11 +103,11 @@ export class CrateProcessor {
           code: file.content,
         })
 
-        if (response.success) {
+        if (response.success && response.fileInfo) {
           parsedFiles.push({
             path: file.path,
             content: file.content,
-            parsed: response.crateInfo,
+            parsed: response.fileInfo,
           })
         } else {
           throw new NonRetryableError(
@@ -125,7 +126,7 @@ export class CrateProcessor {
 
   async storeParsedData(
     crateId: number,
-    parsedFiles: Array<{ path: string; content: string; parsed: any }>,
+    parsedFiles: Array<{ path: string; content: string; parsed: FileInfo }>,
   ) {
     const db = new DatabaseService(this.env.DB)
 
@@ -140,10 +141,18 @@ export class CrateProcessor {
       // Store items from parsed data
       if (file.parsed.items) {
         for (const item of file.parsed.items) {
+          let item_type
+          if ('other' in item.details) {
+            item_type = item.details['other'].itemType
+            // Do something with otherDetails
+          } else {
+            item_type = Object.keys(item.details)[0]
+          }
           await db.items.createItem({
             module_id: module.id,
             name: item.name,
-            item_type: item.item_type,
+            // we'll get the item type from the name of the details object
+            item_type,
             source_code: file.content,
             agent_summary: undefined,
           })

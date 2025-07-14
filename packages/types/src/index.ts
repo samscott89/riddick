@@ -1,14 +1,18 @@
 // Direct re-exports of generated types
-export type { CrateInfo } from './rust_parser_generated/CrateInfo'
-export type { FieldInfo } from './rust_parser_generated/FieldInfo'
+export type { AdtDetails } from './rust_parser_generated/AdtDetails'
+export type { FileInfo } from './rust_parser_generated/FileInfo'
+export type { FunctionDetails } from './rust_parser_generated/FunctionDetails'
+export type { ItemDetails } from './rust_parser_generated/ItemDetails'
 export type { ItemInfo } from './rust_parser_generated/ItemInfo'
+export type { ModuleDetails } from './rust_parser_generated/ModuleDetails'
 export type { ModuleInfo } from './rust_parser_generated/ModuleInfo'
-export type { ParameterInfo } from './rust_parser_generated/ParameterInfo'
+export type { ModuleReference } from './rust_parser_generated/ModuleReference'
+export type { OtherDetails } from './rust_parser_generated/OtherDetails'
 export type { ParseError } from './rust_parser_generated/ParseError'
 export type { ParseRequest } from './rust_parser_generated/ParseRequest'
 export type { ParseResponse } from './rust_parser_generated/ParseResponse'
-export type { SourceLocation } from './rust_parser_generated/SourceLocation'
-export type { VariantInfo } from './rust_parser_generated/VariantInfo'
+export type { TraitDetails } from './rust_parser_generated/TraitDetails'
+export type { TraitMethodInfo } from './rust_parser_generated/TraitMethodInfo'
 
 // Keep the ItemType enum as it's useful
 export enum ItemType {
