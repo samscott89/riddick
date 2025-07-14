@@ -20,13 +20,10 @@ describe('crate-workflow', () => {
       .intercept({ path: () => true })
       .reply(200, fixture.mockDownloadCrate('rudy-parser', '0.4.0'))
     // mock the crate processing workflow
-    env.RUST_PARSER.parse_rust_code = vi
-      .fn()
-      .mockImplementation((input: { code: string }) => {
-        return fixture
-          .createMockRustParser(vi, 'rudy-parser')
-          .parse_rust_code({ code: input.code, fileName: 'src/lib.rs' })
-      })
+    env.RUST_PARSER.parse_rust_code = fixture.createMockRustParser(
+      vi,
+      'rudy-parser',
+    )
 
     env.AI.run = vi
       .fn()
@@ -87,5 +84,20 @@ describe('crate-workflow', () => {
     expect(completedCrate!.agent_summary).toContain(
       'Mock AI response for Summarize this Rust crate "crate-one"',
     )
+
+    const prefix = `crates/${completedCrate!.name}/${completedCrate!.version}/`
+    // check the items were created in R2
+    const files = await env.CRATE_BUCKET.list({
+      prefix,
+    })
+    const items = files.objects.map((file) => file.key.replace(prefix, ''))
+    expect(items).toStrictEqual([
+      'crate.json',
+      'expressions.json',
+      'expressions/parse_expression.json',
+      'types.json',
+      'types/parse_symbol.json',
+      'types/parse_type.json',
+    ])
   })
 })

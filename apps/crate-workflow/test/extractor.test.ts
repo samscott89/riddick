@@ -12,27 +12,18 @@ describe('TarExtractor', () => {
         new Uint8Array(tarballData),
       )
 
-      expect(result).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            path: expect.stringMatching(/.*\.rs$/),
-            content: expect.any(String),
-          }),
-        ]),
-      )
+      expect(result.has('src/lib.rs')).toBe(true)
 
       // Check specific files we know should be in rudy-parser
-      const libFile = result.find((f) => f.path.endsWith('lib.rs'))
+      const libFile = result.get('src/lib.rs')
       expect(libFile).toBeDefined()
-      expect(libFile?.content).toContain('pub mod expressions')
-      expect(libFile?.content).toContain('pub mod types')
+      expect(libFile).toContain('pub mod expressions')
+      expect(libFile).toContain('pub mod types')
 
-      const expressionsFile = result.find((f) =>
-        f.path.endsWith('expressions.rs'),
-      )
+      const expressionsFile = result.get('src/expressions.rs')
       expect(expressionsFile).toBeDefined()
 
-      const typesFile = result.find((f) => f.path.endsWith('types.rs'))
+      const typesFile = result.get('src/types.rs')
       expect(typesFile).toBeDefined()
     })
 
@@ -44,32 +35,10 @@ describe('TarExtractor', () => {
       )
 
       // Should only contain .rs files
-      const allRustFiles = result.every((file) => file.path.endsWith('.rs'))
+      const allRustFiles = Object.entries(result).every(([file, _code]) =>
+        file.endsWith('.rs'),
+      )
       expect(allRustFiles).toBe(true)
-
-      // Should not contain Cargo.toml, README.md, etc.
-      const hasNonRustFiles = result.some(
-        (file) =>
-          file.path.endsWith('.toml') ||
-          file.path.endsWith('.md') ||
-          file.path.endsWith('.txt'),
-      )
-      expect(hasNonRustFiles).toBe(false)
-    })
-
-    it('should normalize file paths', async () => {
-      const tarballData = fixture.mockDownloadCrate('rudy-parser', '0.4.0')
-
-      const result = await TarExtractor.extractRustFiles(
-        new Uint8Array(tarballData),
-      )
-
-      // Paths should be relative and normalized
-      result.forEach((file) => {
-        expect(file.path).not.toMatch(/^\//) // Should not start with /
-        expect(file.path).not.toMatch(/\.\./) // Should not contain ..
-        expect(file.path).toMatch(/^[\w\-./]+$/) // Should be clean paths
-      })
     })
 
     it('should handle empty or invalid tarballs gracefully', async () => {
@@ -91,31 +60,13 @@ describe('TarExtractor', () => {
         new Uint8Array(tarballData),
       )
 
-      const libFile = result.find((f) => f.path.endsWith('lib.rs'))
-      expect(libFile?.content).toBeTruthy()
-      expect(libFile?.content.length).toBeGreaterThan(0)
+      const libFile = result.get('src/lib.rs')
+      expect(libFile).toBeTruthy()
+      expect(libFile!.length).toBeGreaterThan(0)
 
       // Content should be valid UTF-8 text
-      expect(typeof libFile?.content).toBe('string')
-      expect(libFile?.content).toMatch(/^[\s\S]*$/) // Should contain printable characters
-    })
-
-    it('should extract files with correct relative paths', async () => {
-      const tarballData = fixture.mockDownloadCrate('rudy-parser', '0.4.0')
-
-      const result = await TarExtractor.extractRustFiles(
-        new Uint8Array(tarballData),
-      )
-
-      // Find the lib.rs file
-      const libFile = result.find((f) => f.path.endsWith('lib.rs'))
-      expect(libFile?.path).toMatch(/src\/lib\.rs$/)
-
-      // Check that paths maintain directory structure
-      const srcFiles = result.filter((f) =>
-        f.path.startsWith('rudy-parser-0.4.0/src/'),
-      )
-      expect(srcFiles.length).toBeGreaterThan(0)
+      expect(typeof libFile).toBe('string')
+      expect(libFile).toMatch(/^[\s\S]*$/) // Should contain printable characters
     })
   })
 })

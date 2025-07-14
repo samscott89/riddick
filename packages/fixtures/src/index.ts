@@ -85,16 +85,20 @@ export class FixtureHelper {
   }
 
   createMockRustParser(vi: any, crateName: SupportedCrateName) {
-    return {
-      parse_rust_code: vi
-        .fn()
-        .mockImplementation((input: { fileName: string; code: string }) => {
-          const { fileName } = input
-          if (crateName === 'rudy-parser') {
+    return vi
+      .fn()
+      .mockImplementation((input: { code: string; filePath: string }) => {
+        const fileName = input.filePath
+        if (crateName === 'rudy-parser') {
+          if (fileName in this.fixtures.rudyParser.parseOutput) {
             return this.fixtures.rudyParser.parseOutput[fileName]
+          } else {
+            throw new Error(
+              `No mock parser output for ${crateName} ${fileName}`,
+            )
           }
-          throw new Error(`No mock parser output for ${crateName} ${fileName}`)
-        }),
-    }
+        }
+        throw new Error(`No mock parser output for ${crateName} ${fileName}`)
+      })
   }
 }

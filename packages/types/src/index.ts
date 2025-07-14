@@ -117,7 +117,7 @@ export interface QueueMessage {
 export interface CrateWithData {
   name: string
   version: string
-  files: Array<{ path: string; content: string }>
+  files: Map<string, string>
 }
 
 export interface ProcessingStage {

@@ -4,7 +4,7 @@ import {
   type WorkflowEvent,
 } from 'cloudflare:workers'
 import { DatabaseService } from '@riddick/database'
-import type { FileInfo } from '@riddick/types'
+import type { ItemInfo } from '@riddick/types'
 import {
   CrateStatus,
   type QueueMessage,
@@ -15,7 +15,11 @@ import { TarExtractor } from './extractor'
 import { NonRetryableError } from 'cloudflare:workflows'
 
 interface RustParser extends Fetcher {
-  parse_rust_code(input: { code: string; option?: any }): Promise<ParseResponse>
+  parse_rust_code(input: {
+    code: string
+    filePath?: string | null
+    includePrivate?: boolean
+  }): Promise<ParseResponse>
 }
 
 export interface Env {
@@ -34,7 +38,7 @@ export interface CrateProcessingParams {
 
 export interface CrateAiSummary {
   crateSummary: string
-  moduleSummaries: Map<number, string>
+  moduleSummaries: Map<string, string>
 }
 
 export class CrateProcessor {
@@ -88,91 +92,222 @@ export class CrateProcessor {
 
   async extractRustFiles(
     tarballData: Uint8Array,
-  ): Promise<Array<{ path: string; content: string }>> {
+  ): Promise<Map<string, string>> {
     return await TarExtractor.extractRustFiles(tarballData)
   }
 
-  async parseRustFiles(
-    files: Array<{ path: string; content: string }>,
-  ): Promise<Array<{ path: string; content: string; parsed: any }>> {
-    const parsedFiles = []
+  async recursivelyParseAndStore(
+    crateId: number,
+    crateName: string,
+    version: string,
+    files: Map<string, string>,
+  ): Promise<string[]> {
+    const processedModules = new Set<string>()
+    const storedKeys: string[] = []
 
-    for (const file of files) {
-      try {
-        const response = await this.env.RUST_PARSER.parse_rust_code({
-          code: file.content,
-        })
+    // Start with lib.rs or main.rs as entrypoint
+    const entrypoint = 'src/lib.rs'
+    const file = files.get(entrypoint)
 
-        if (response.success && response.fileInfo) {
-          parsedFiles.push({
-            path: file.path,
-            content: file.content,
-            parsed: response.fileInfo,
-          })
-        } else {
-          throw new NonRetryableError(
-            `Failed to parse file ${file.path}:\n\t${response.errors.join('\n\t')}`,
-          )
-        }
-      } catch (error) {
-        throw new NonRetryableError(
-          `Failed to parse file ${file.path}: ${error instanceof Error ? error.message : String(error)}`,
-        )
-      }
+    if (!file) {
+      throw new NonRetryableError(
+        `No entrypoint found (${entrypoint}) for crate ${crateName}`,
+      )
     }
 
-    return parsedFiles
+    console.log(`Starting recursive parsing from entrypoint: ${entrypoint}`)
+
+    const modulePath: string[] = []
+
+    const keys = await this.parseAndStoreFile(
+      crateId,
+      crateName,
+      version,
+      modulePath,
+      { path: entrypoint, content: file },
+      files,
+      processedModules,
+    )
+
+    storedKeys.push(...keys)
+    return storedKeys
   }
 
-  async storeParsedData(
+  private async parseAndStoreFile(
     crateId: number,
-    parsedFiles: Array<{ path: string; content: string; parsed: FileInfo }>,
-  ) {
-    const db = new DatabaseService(this.env.DB)
-
-    for (const file of parsedFiles) {
-      // Create module for each file
-      const module = await db.modules.createModule({
-        crate_id: crateId,
-        path: file.path,
-        agent_summary: undefined,
-      })
-
-      // Store items from parsed data
-      if (file.parsed.items) {
-        for (const item of file.parsed.items) {
-          let item_type
-          if ('other' in item.details) {
-            item_type = item.details['other'].itemType
-            // Do something with otherDetails
-          } else {
-            item_type = Object.keys(item.details)[0]
-          }
-          await db.items.createItem({
-            module_id: module.id,
-            name: item.name,
-            // we'll get the item type from the name of the details object
-            item_type,
-            source_code: file.content,
-            agent_summary: undefined,
-          })
-        }
+    crateName: string,
+    version: string,
+    modulePath: string[],
+    file: { path: string; content: string },
+    allFiles: Map<string, string>,
+    processedModules: Set<string>,
+  ): Promise<string[]> {
+    async function storeItem(
+      itemKey: string,
+      item: ItemInfo,
+      bucket: R2Bucket,
+    ) {
+      try {
+        await bucket.put(itemKey, JSON.stringify(item))
+        console.log(`Stored item: ${item.name} at ${itemKey}`)
+      } catch (error) {
+        console.error(`Failed to store item ${item.name}:`, error)
       }
     }
+
+    const storedKeys: string[] = []
+
+    const currentPath = ['src', ...modulePath].join('/')
+
+    // Mark this file as processed to prevent infinite loops
+    if (processedModules.has(file.path)) {
+      return storedKeys
+    }
+    processedModules.add(file.path)
+
+    console.log(`Parsing file: ${file.path} in module ${modulePath.join('.')}`)
+    console.log(file.content.substring(0, 100) + '...') // Log first 100 chars
+
+    // Parse the file using the Rust parser
+    const response = await this.env.RUST_PARSER.parse_rust_code({
+      code: file.content,
+      filePath: file.path,
+      includePrivate: false, // Only process public items for recursive parsing
+    })
+
+    if (!response.success || !response.fileInfo) {
+      console.warn(
+        `Failed to parse file ${file.path}: ${response.errors.join(', ')}`,
+      )
+      return storedKeys
+    }
+
+    // save the module summary
+    let itemKey
+    if (modulePath.length === 0) {
+      // this is the root module
+      itemKey = `crates/${crateName}/${version}/crate.json`
+      console.log(`Storing crate info`)
+    } else {
+      itemKey = `crates/${crateName}/${version}/${modulePath.join('/')}.json`
+      console.log(`Storing module: ${modulePath[modulePath.length - 1]}`)
+    }
+    try {
+      await this.env.CRATE_BUCKET.put(
+        itemKey,
+        JSON.stringify(response.fileInfo),
+      )
+    } catch (error) {
+      throw new Error(`Failed to store module info at ${itemKey}: ${error}`)
+    }
+
+    const { items, moduleReferences } = response.fileInfo
+
+    // Store each item as a separate JSON file in R2
+    for (const item of items) {
+      const itemType = this.getItemType(item)
+
+      const itemKey = `crates/${crateName}/${version}/${modulePath.join('/')}/${item.name}.json`
+      switch (itemType) {
+        case 'function':
+          console.log(`Storing function: ${item.name}`)
+          await storeItem(itemKey, item, this.env.CRATE_BUCKET)
+          storedKeys.push(itemKey)
+
+          break
+        case 'adt':
+          console.log(`Storing ADT: ${item.name}`)
+          await storeItem(itemKey, item, this.env.CRATE_BUCKET)
+          storedKeys.push(itemKey)
+
+          break
+        default:
+          console.log(`Skipping item: ${item.name} (${itemType})`)
+      }
+    }
+
+    // Recursively process module references
+    for (const moduleRef of moduleReferences) {
+      if (moduleRef.visibility.includes('pub')) {
+        const newModulePath: string[] = [...modulePath, moduleRef.name]
+        // Find the referenced module file
+        const moduleFile = moduleRef.expectedPaths.find((path) => {
+          const filePath = `${currentPath}/${path}`
+          console.log(`Checking module reference: ${filePath}`)
+          return allFiles.has(filePath)
+        })
+        if (!moduleFile) {
+          console.warn(
+            `Module reference ${moduleRef.name} not found in provided files`,
+          )
+          continue
+        }
+        const path = `${currentPath}/${moduleFile}`
+        const content = allFiles.get(path)!
+
+        const recursiveKeys = await this.parseAndStoreFile(
+          crateId,
+          crateName,
+          version,
+          newModulePath,
+          { path, content },
+          allFiles,
+          processedModules,
+        )
+        storedKeys.push(...recursiveKeys)
+      }
+    }
+
+    return storedKeys
+  }
+
+  private getItemType(item: any): string {
+    if ('function' in item.details) return 'function'
+    if ('adt' in item.details) return item.details.adt.adtType
+    if ('trait' in item.details) return 'trait'
+    if ('module' in item.details) return 'module'
+    if ('other' in item.details) return item.details.other.itemType
+    return 'unknown'
   }
 
   async generateSummaries(crateId: number): Promise<CrateAiSummary> {
     const db = new DatabaseService(this.env.DB)
+    const moduleSummaries = new Map<string, string>()
 
-    const moduleSummaries = new Map()
+    // Get crate data from database
+    const crate = await db.crates.getCrate(crateId)
+    if (!crate)
+      throw new NonRetryableError(`Crate with ID ${crateId} not found`)
 
-    // Get crate data
-    const { crate, modules, items } =
-      await db.getCrateWithModulesAndItems(crateId)
-    if (!crate) throw new Error(`Crate with ID ${crateId} not found`)
+    // List all items stored in R2 for this crate
+    const prefix = `crates/${crate.name}/${crate.version}/`
+    const listed = await this.env.CRATE_BUCKET.list({ prefix })
+
+    // Group items by module (file path)
+    const itemsByModule = new Map<string, any[]>()
+
+    for (const object of listed.objects) {
+      // Parse the path to extract module and item name
+      const pathParts = object.key.replace(prefix, '').split('/')
+      if (pathParts.length >= 2) {
+        const modulePath = pathParts.slice(0, -1).join('/')
+
+        // Get the item content
+        const itemObj = await this.env.CRATE_BUCKET.get(object.key)
+        if (itemObj) {
+          const itemData = JSON.parse(await itemObj.text())
+
+          if (!itemsByModule.has(modulePath)) {
+            itemsByModule.set(modulePath, [])
+          }
+          itemsByModule.get(modulePath)!.push(itemData)
+        }
+      }
+    }
 
     // Generate crate-level summary
-    const crateContext = modules.map((m) => `Module: ${m.path}`).join('\n\n')
+    const moduleList = Array.from(itemsByModule.keys())
+    const crateContext = moduleList.map((m) => `Module: ${m}`).join('\n')
 
     const crateSummary = await this.generateAISummary(
       `Summarize this Rust crate "${crate.name}" based on its modules:
@@ -182,32 +317,30 @@ ${crateContext}
 Provide a concise summary of what this crate does, its main purpose, and key functionality.`,
     )
 
-    // Update crate with summary (assuming the repo has an update method)
-    // For now, we'll skip the crate update as the interface isn't clear
-
     // Generate module summaries
-    for (const module of modules) {
-      const moduleItems = items.filter((item) => item.module_id === module.id)
-      const itemsContext = moduleItems
-        .map((item) => `${item.item_type}: ${item.name}`)
+    for (const [modulePath, items] of itemsByModule) {
+      const itemsContext = items
+        .map((item) => {
+          const itemType = this.getItemType(item)
+          return `${itemType}: ${item.name}`
+        })
         .join('\n')
 
       if (itemsContext) {
         const moduleSummary = await this.generateAISummary(
-          `Summarize this Rust module "${module.path}" based on its contents:
+          `Summarize this Rust module "${modulePath}" based on its contents:
 
 ${itemsContext}
 
 Explain what this module does and its role in the crate.`,
         )
 
-        moduleSummaries.set(module.id, moduleSummary)
+        moduleSummaries.set(modulePath, moduleSummary)
       }
     }
 
-    // For now, we'll skip item updates as the interface isn't clear
     console.log(
-      `Generated summaries for crate ${crateId} with ${modules.length} modules and ${items.length} items`,
+      `Generated summaries for crate ${crateId} with ${moduleList.length} modules`,
     )
 
     return { crateSummary, moduleSummaries }
@@ -243,20 +376,32 @@ Explain what this module does and its role in the crate.`,
   async storeCompletedCrate(
     crateId: number,
     crateSummary: string,
-    moduleSummaries: Map<number, string>,
+    moduleSummaries: Map<string, string>,
   ): Promise<void> {
     const db = new DatabaseService(this.env.DB)
 
-    // Store crate summary
+    // Store crate summary in database
     await db.crates.updateCrateSummary(crateId, crateSummary)
 
-    // Store module summaries
-    for (const [id, summary] of moduleSummaries.entries()) {
-      await db.modules.updateModuleSummary({
-        id,
-        summary,
-      })
+    // Store module summaries in R2
+    const summariesKey = `parsed-crates/${crateId}/summaries.json`
+    const summariesData = {
+      crateId,
+      crateSummary,
+      moduleSummaries: Object.fromEntries(moduleSummaries),
+      generatedAt: new Date().toISOString(),
     }
+
+    await this.env.CRATE_BUCKET.put(
+      summariesKey,
+      JSON.stringify(summariesData, null, 2),
+      {
+        customMetadata: {
+          crateId: crateId.toString(),
+          moduleCount: moduleSummaries.size.toString(),
+        },
+      },
+    )
 
     // Update crate status to COMPLETED
     await db.updateCrateProgress(crateId, CrateStatus.COMPLETE)
@@ -281,22 +426,29 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
     })
 
     let crateData: CrateWithData
-
     const crateProcessor = new CrateProcessor(this.env)
 
     try {
+      // Phase 1: Fetch and recursively parse all items
       crateData = await step.do('fetch-crate-data', async () => {
         return await crateProcessor.fetchCrateData(crateName, version)
       })
 
-      const parsedData = await step.do('parse-rust-files', async () => {
-        return await crateProcessor.parseRustFiles(crateData.files)
-      })
+      const storedKeys = await step.do(
+        'recursive-parse-and-store',
+        async () => {
+          return await crateProcessor.recursivelyParseAndStore(
+            crateId,
+            crateName,
+            version,
+            crateData.files,
+          )
+        },
+      )
 
-      await step.do('store-parsed-data', async () => {
-        await crateProcessor.storeParsedData(crateId, parsedData)
-      })
+      console.log(`Phase 1 completed: stored ${storedKeys.length} items in R2`)
 
+      // Phase 2: AI enrichment (generate summaries)
       const summary = await step.do('generate-summaries', async () => {
         return await crateProcessor.generateSummaries(crateId)
       })

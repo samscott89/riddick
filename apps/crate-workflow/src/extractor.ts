@@ -22,13 +22,14 @@ interface TarHeader {
 export class TarExtractor {
   static async extractRustFiles(
     tarGzData: Uint8Array,
-  ): Promise<Array<{ path: string; content: string }>> {
+  ): Promise<Map<string, string>> {
     // First decompress the gzip
     const tarData = inflate(tarGzData)
 
     // Then extract tar entries
-    const files: Array<{ path: string; content: string }> = []
+    const files: Map<string, string> = new Map()
     let offset = 0
+    let folderPrefix
 
     while (offset < tarData.length) {
       const header = this.parseTarHeader(tarData, offset)
@@ -44,15 +45,17 @@ export class TarExtractor {
         // Regular file
         const filePath = header.name
 
+        if (!folderPrefix) {
+          // Extract folder prefix if it exists
+          folderPrefix = filePath.substring(0, filePath.indexOf('/src/'))
+        }
+
         // Only process .rs files
         if (filePath.endsWith('.rs')) {
           const fileData = tarData.slice(offset, offset + header.size)
           const content = new TextDecoder().decode(fileData)
 
-          files.push({
-            path: filePath,
-            content,
-          })
+          files.set(filePath.replace(folderPrefix + '/', ''), content)
         }
       }
 
