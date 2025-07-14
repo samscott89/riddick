@@ -31,15 +31,10 @@ export enum ItemType {
 
 export enum CrateStatus {
   PENDING = 'pending',
-  QUEUED = 'queued',
-  FETCHING = 'fetching',
-  FETCHED = 'fetched',
-  PARSING = 'parsing',
-  PARSED = 'parsed',
+  PROCESSING = 'processing',
   SUMMARIZING = 'summarizing',
   COMPLETE = 'complete',
   FAILED = 'failed',
-  NOT_FOUND = 'not_found',
 }
 
 export interface Crate {

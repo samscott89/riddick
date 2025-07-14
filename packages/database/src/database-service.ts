@@ -1,10 +1,4 @@
-import {
-  CrateRepository,
-} from './repositories'
-import type {
-  Crate,
-  CreateCrateRequest,
-} from '@riddick/types'
+import { CrateRepository } from './repositories'
 import { CrateStatus } from '@riddick/types'
 
 export class DatabaseService {
@@ -17,8 +11,6 @@ export class DatabaseService {
   get crates(): CrateRepository {
     return this.crateRepository
   }
-
-
 
   async deleteCrateWithDependencies(crateId: number): Promise<void> {
     await this.crateRepository.deleteCrate(crateId)
@@ -60,5 +52,4 @@ export class DatabaseService {
       cratesByStatus,
     }
   }
-
 }

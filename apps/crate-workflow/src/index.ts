@@ -187,10 +187,8 @@ export class CrateProcessor {
     if (modulePath.length === 0) {
       // this is the root module
       itemKey = `crates/${crateName}/${version}/crate.json`
-      console.log(`Storing crate info`)
     } else {
       itemKey = `crates/${crateName}/${version}/${modulePath.join('/')}.json`
-      console.log(`Storing module: ${modulePath[modulePath.length - 1]}`)
     }
     try {
       await this.env.CRATE_BUCKET.put(
@@ -210,19 +208,21 @@ export class CrateProcessor {
       const itemKey = `crates/${crateName}/${version}/${modulePath.join('/')}/${item.name}.json`
       switch (itemType) {
         case 'function':
-          console.log(`Storing function: ${item.name}`)
           await storeItem(itemKey, item, this.env.CRATE_BUCKET)
           storedKeys.push(itemKey)
 
           break
         case 'adt':
-          console.log(`Storing ADT: ${item.name}`)
           await storeItem(itemKey, item, this.env.CRATE_BUCKET)
           storedKeys.push(itemKey)
 
           break
+        case 'trait':
+          await storeItem(itemKey, item, this.env.CRATE_BUCKET)
+          storedKeys.push(itemKey)
+          break
         default:
-          console.log(`Skipping item: ${item.name} (${itemType})`)
+          break
       }
     }
 
@@ -233,7 +233,6 @@ export class CrateProcessor {
         // Find the referenced module file
         const moduleFile = moduleRef.expectedPaths.find((path) => {
           const filePath = `${currentPath}/${path}`
-          console.log(`Checking module reference: ${filePath}`)
           return allFiles.has(filePath)
         })
         if (!moduleFile) {
@@ -422,7 +421,7 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
     const db = new DatabaseService(this.env.DB)
 
     await step.do('update-status-processing', async () => {
-      await db.updateCrateProgress(crateId, CrateStatus.PARSING)
+      await db.updateCrateProgress(crateId, CrateStatus.PROCESSING)
     })
 
     let crateData: CrateWithData

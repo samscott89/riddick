@@ -72,7 +72,7 @@ app.post('/index', zValidator('json', indexSchema), async (c) => {
     const newCrate = await crateRepo.createCrate({
       name: crate_name,
       version,
-      status: CrateStatus.QUEUED,
+      status: CrateStatus.PENDING,
     })
 
     // Queue the processing task
