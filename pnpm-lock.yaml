@@ -176,6 +176,9 @@ importers:
       '@riddick/config':
         specifier: workspace:*
         version: link:../config
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.7
       typescript:
         specifier: ^5.5.3
         version: 5.8.3

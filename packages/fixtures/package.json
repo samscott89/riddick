@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@riddick/config": "workspace:*",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "@types/node": "^20.0.0"
   }
 }
