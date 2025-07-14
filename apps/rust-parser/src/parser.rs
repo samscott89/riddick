@@ -87,7 +87,7 @@ pub struct FunctionDetails {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AdtDetails {
-    pub adt_type: String, // "struct", "enum", "union"
+    pub adt_type: String,       // "struct", "enum", "union"
     pub methods: Vec<ItemInfo>, // Methods from impl blocks
 }
 
@@ -337,9 +337,13 @@ fn extract_item_info(
 ) -> Option<ItemInfo> {
     match item {
         ast::Item::Fn(func) => extract_function_info(func, full_source, include_private),
-        ast::Item::Struct(_) => extract_adt_info(item.clone(), "struct", full_source, include_private),
+        ast::Item::Struct(_) => {
+            extract_adt_info(item.clone(), "struct", full_source, include_private)
+        }
         ast::Item::Enum(_) => extract_adt_info(item.clone(), "enum", full_source, include_private),
-        ast::Item::Union(_) => extract_adt_info(item.clone(), "union", full_source, include_private),
+        ast::Item::Union(_) => {
+            extract_adt_info(item.clone(), "union", full_source, include_private)
+        }
         ast::Item::Trait(t) => extract_trait_info(t, full_source, include_private),
         ast::Item::Module(m) => extract_module_info(&m, full_source, include_private),
         other => extract_other_item_info(other, full_source, include_private),
@@ -405,7 +409,7 @@ fn extract_adt_info(
         ),
         _ => return None,
     };
-    
+
     let full_code = syntax.text().to_string();
     let location = text_range_to_byte_offsets(syntax.text_range());
 
@@ -418,9 +422,9 @@ fn extract_adt_info(
         doc_comment,
         visibility,
         location,
-        details: ItemDetails::Adt(AdtDetails { 
+        details: ItemDetails::Adt(AdtDetails {
             adt_type: adt_type.to_string(),
-            methods 
+            methods,
         }),
     })
 }
@@ -499,11 +503,7 @@ fn extract_trait_methods(trait_item: &ast::Trait, _full_source: &str) -> Vec<Tra
     methods
 }
 
-fn extract_adt_methods(
-    adt_name: &str,
-    full_source: &str,
-    include_private: bool,
-) -> Vec<ItemInfo> {
+fn extract_adt_methods(adt_name: &str, full_source: &str, include_private: bool) -> Vec<ItemInfo> {
     let mut methods = Vec::new();
 
     // Parse the full source to find impl blocks for this struct
@@ -619,10 +619,11 @@ fn text_range_to_byte_offsets(range: TextRange) -> [u32; 2] {
 }
 
 fn extract_doc_comment<T: HasDocComments>(node: &T) -> Option<String> {
-    let docs: Vec<String> = node.doc_comments()
+    let docs: Vec<String> = node
+        .doc_comments()
         .map(|comment| comment.text().trim_start_matches("///").trim().to_string())
         .collect();
-    
+
     if docs.is_empty() {
         None
     } else {

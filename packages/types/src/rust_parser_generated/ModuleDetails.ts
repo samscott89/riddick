@@ -2,4 +2,4 @@
 import type { ItemInfo } from "./ItemInfo";
 import type { ModuleReference } from "./ModuleReference";
 
-export type ModuleInfo = { name: string, items: Array<ItemInfo>, inlineModules: Array<ModuleInfo>, moduleReferences: Array<ModuleReference>, location: [number, number], };
+export type ModuleDetails = { items: Array<ItemInfo>, moduleReferences: Array<ModuleReference>, };
