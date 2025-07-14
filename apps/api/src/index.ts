@@ -105,21 +105,28 @@ app.post('/index', zValidator('json', indexSchema), async (c) => {
   }
 })
 
+// Apply bearerAuth middleware to the new crates endpoints
+app.use('/crates/*', prettyJSON(), logger(), async (c, next) => {
+  const auth = bearerAuth({ token: c.env.API_KEY })
+  return auth(c, next)
+})
+
 // Get crate status
 app.get(
-  '/crate/:id',
+  '/crates/:name/:version/status',
   zValidator(
     'param',
     z.object({
-      id: z.coerce.number(),
+      name: z.string(),
+      version: z.string(),
     }),
   ),
   async (c) => {
-    const { id } = c.req.valid('param')
+    const { name, version } = c.req.valid('param')
 
     try {
       const crateRepo = new CrateRepository(c.env.DB)
-      const crate = await crateRepo.getCrate(id)
+      const crate = await crateRepo.getCrateByNameVersion(name, version)
 
       if (!crate) {
         return c.json(
@@ -146,6 +153,43 @@ app.get(
         { status: 500 },
       )
     }
+  },
+)
+
+// Get crate summary
+app.get('/crates/:name/:version/summary', async (c) => {
+  const { name, version } = c.req.param()
+
+  return c.json({
+    summary: 'This is a mock summary for the crate.',
+  })
+})
+
+// Get function usage details
+app.get('/crates/:name/:version/function', async (c) => {
+  const path = c.req.query('path')
+
+  return c.json({
+    signature: 'pub fn mock_function() -> String',
+    usage: 'This is a mock usage summary.',
+  })
+})
+
+// Query crate
+app.post(
+  '/crates/:name/:version/query',
+  zValidator('json', z.object({ query: z.string() })),
+  async (c) => {
+    const { name, version } = c.req.param()
+    const { query } = c.req.valid('json')
+
+    return c.json({
+      results: [
+        {
+          snippet: 'pub fn relevant_function() { ... }',
+        },
+      ],
+    })
   },
 )
 
