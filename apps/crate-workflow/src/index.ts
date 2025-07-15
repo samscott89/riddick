@@ -285,7 +285,7 @@ export class CrateProcessor {
     return 'unknown'
   }
 
-  async summarizeItem(storedItem: StoredModule): Promise<void> {
+  async summarizeItem(storedItem: StoredModule): Promise<string> {
     console.log(
       `Starting AI summarization for ${storedItem.items.length} items`,
     )
@@ -330,6 +330,8 @@ export class CrateProcessor {
         // Overwrite the existing R2 object with the enriched version
         await this.env.CRATE_BUCKET.put(key, JSON.stringify(item))
         console.log(`Updated item ${item.name} with AI summary`)
+
+        return agentSummary
       } catch (error) {
         console.error(`Failed to summarize item at ${key}:`, error)
       }
@@ -337,12 +339,13 @@ export class CrateProcessor {
 
     // finally, summarize the module itself
     const key = storedItem.key
+    let summary: string
     try {
       // Fetch the raw JSON ItemInfo object from R2
       const itemObj = await this.env.CRATE_BUCKET.get(key)
       if (!itemObj) {
         console.warn(`Module not found in R2: ${key}`)
-        return
+        throw new Error(`Module not found: ${key}`)
       }
 
       const info: FileInfo = await itemObj.json()
@@ -352,7 +355,7 @@ export class CrateProcessor {
         console.log(
           `Module ${storedItem.name} already has agent_summary, skipping`,
         )
-        return
+        return info.agent_summary
       }
 
       // Generate AI summary using the item's fullCode and docComment
@@ -368,87 +371,13 @@ export class CrateProcessor {
       // Overwrite the existing R2 object with the enriched version
       await this.env.CRATE_BUCKET.put(key, JSON.stringify(info))
       console.log(`Updated item ${storedItem.name} with AI summary`)
+      summary = agentSummary
     } catch (error) {
-      console.error(`Failed to summarize item at ${key}:`, error)
+      throw new Error(`Failed to summarize item at ${key}: ${error}`)
     }
 
     console.log(`Completed AI summarization`)
-  }
-
-  async generateSummaries(crateId: number): Promise<CrateAiSummary> {
-    const db = new DatabaseService(this.env.DB)
-    const moduleSummaries = new Map<string, string>()
-
-    // Get crate data from database
-    const crate = await db.crates.getCrate(crateId)
-    if (!crate)
-      throw new NonRetryableError(`Crate with ID ${crateId} not found`)
-
-    // List all items stored in R2 for this crate
-    const prefix = `crates/${crate.name}/${crate.version}/`
-    const listed = await this.env.CRATE_BUCKET.list({ prefix })
-
-    // Group items by module (file path)
-    const itemsByModule = new Map<string, any[]>()
-
-    for (const object of listed.objects) {
-      // Parse the path to extract module and item name
-      const pathParts = object.key.replace(prefix, '').split('/')
-      if (pathParts.length >= 2) {
-        const modulePath = pathParts.slice(0, -1).join('/')
-
-        // Get the item content
-        const itemObj = await this.env.CRATE_BUCKET.get(object.key)
-        if (itemObj) {
-          const itemData = JSON.parse(await itemObj.text())
-
-          if (!itemsByModule.has(modulePath)) {
-            itemsByModule.set(modulePath, [])
-          }
-          itemsByModule.get(modulePath)!.push(itemData)
-        }
-      }
-    }
-
-    // Generate crate-level summary
-    const moduleList = Array.from(itemsByModule.keys())
-    const crateContext = moduleList.map((m) => `Module: ${m}`).join('\n')
-
-    const crateSummary = await this.generateAISummary(
-      `Summarize this Rust crate "${crate.name}" based on its modules:
-
-${crateContext}
-
-Provide a concise summary of what this crate does, its main purpose, and key functionality.`,
-    )
-
-    // Generate module summaries
-    for (const [modulePath, items] of itemsByModule) {
-      const itemsContext = items
-        .map((item) => {
-          const itemType = this.getItemType(item)
-          return `${itemType}: ${item.name}`
-        })
-        .join('\n')
-
-      if (itemsContext) {
-        const moduleSummary = await this.generateAISummary(
-          `Summarize this Rust module "${modulePath}" based on its contents:
-
-${itemsContext}
-
-Explain what this module does and its role in the crate.`,
-        )
-
-        moduleSummaries.set(modulePath, moduleSummary)
-      }
-    }
-
-    console.log(
-      `Generated summaries for crate ${crateId} with ${moduleList.length} modules`,
-    )
-
-    return { crateSummary, moduleSummaries }
+    return summary
   }
 
   async generateAISummary(prompt: string): Promise<string> {
@@ -480,32 +409,11 @@ Explain what this module does and its role in the crate.`,
   async storeCompletedCrate(
     crateId: number,
     crateSummary: string,
-    moduleSummaries: Map<string, string>,
   ): Promise<void> {
     const db = new DatabaseService(this.env.DB)
 
     // Store crate summary in database
     await db.crates.updateCrateSummary(crateId, crateSummary)
-
-    // Store module summaries in R2
-    const summariesKey = `parsed-crates/${crateId}/summaries.json`
-    const summariesData = {
-      crateId,
-      crateSummary,
-      moduleSummaries: Object.fromEntries(moduleSummaries),
-      generatedAt: new Date().toISOString(),
-    }
-
-    await this.env.CRATE_BUCKET.put(
-      summariesKey,
-      JSON.stringify(summariesData, null, 2),
-      {
-        customMetadata: {
-          crateId: crateId.toString(),
-          moduleCount: moduleSummaries.size.toString(),
-        },
-      },
-    )
 
     // Update crate status to COMPLETED
     await db.updateCrateProgress(crateId, CrateStatus.COMPLETE)
@@ -553,21 +461,12 @@ export class CrateProcessingWorkflow extends WorkflowEntrypoint<
       console.log(`Phase 1 completed: stored items in R2`)
 
       // Phase 2: AI enrichment (summarize individual items)
-      await step.do('summarize-items', async () => {
+      const crateSummary = await step.do('summarize-items', async () => {
         return await crateProcessor.summarizeItem(storedItem)
       })
 
-      // Phase 3: Generate crate and module level summaries
-      const summary = await step.do('generate-summaries', async () => {
-        return await crateProcessor.generateSummaries(crateId)
-      })
-
       await step.do('update-status-completed', async () => {
-        return await crateProcessor.storeCompletedCrate(
-          crateId,
-          summary.crateSummary,
-          summary.moduleSummaries,
-        )
+        return await crateProcessor.storeCompletedCrate(crateId, crateSummary)
       })
     } catch (error) {
       await step.do('update-status-failed', async () => {

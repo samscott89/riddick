@@ -21,6 +21,13 @@
       "migrations_dir": "../../packages/database/migrations"
     }
   ],
+
+  "r2_buckets": [
+    {
+      "binding": "CRATES_STORAGE",
+      "bucket_name": "riddick-crates"
+    }
+  ],
   
   "observability": {
     "logs": {

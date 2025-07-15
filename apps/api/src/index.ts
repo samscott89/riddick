@@ -6,7 +6,12 @@ import { prettyJSON } from 'hono/pretty-json'
 import { z } from 'zod'
 
 import { CrateRepository } from '@riddick/database'
-import type { QueueMessage } from '@riddick/types'
+import type {
+  FileInfo,
+  FunctionDetails,
+  ItemInfo,
+  QueueMessage,
+} from '@riddick/types'
 import { CrateStatus } from '@riddick/types'
 
 type Bindings = {
@@ -15,6 +20,7 @@ type Bindings = {
   DB: D1Database
   CRATES_STORAGE: R2Bucket
   CRATES_API_BASE_URL: string
+  AUTORAG: any
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -160,19 +166,129 @@ app.get(
 app.get('/crates/:name/:version/summary', async (c) => {
   const { name, version } = c.req.param()
 
-  return c.json({
-    summary: 'This is a mock summary for the crate.',
-  })
+  try {
+    const crate = await c.env.CRATES_STORAGE.get(
+      `crates/${name}/${version}/crate.json`,
+    )
+    if (!crate) {
+      return c.json(
+        {
+          success: false,
+          error: 'Crate not found',
+        },
+        { status: 404 },
+      )
+    }
+
+    const crateData: FileInfo = await crate.json()
+    if (!crateData.agent_summary) {
+      return c.json(
+        {
+          success: false,
+          error: 'No summary available for this crate',
+        },
+        { status: 404 },
+      )
+    }
+    return c.json({
+      success: true,
+      summary: crateData.agent_summary,
+    })
+  } catch (error) {
+    console.error('Error fetching crate summary:', error)
+    return c.json(
+      {
+        success: false,
+        error: 'Failed to fetch crate summary',
+        details: String(error),
+      },
+      { status: 500 },
+    )
+  }
+})
+
+// Get crate summary
+app.get('/crates/:name/:version/debug', async (c) => {
+  const { name, version } = c.req.param()
+
+  try {
+    const crate = await c.env.CRATES_STORAGE.list({
+      prefix: `crates/${name}/${version}/`,
+    })
+    return c.json({
+      success: true,
+      files: crate.objects.map((f) => f.key),
+    })
+  } catch (error) {
+    console.error('Error fetching crate summary:', error)
+    return c.json(
+      {
+        success: false,
+        error: 'Failed to fetch crate summary',
+        details: String(error),
+      },
+      { status: 500 },
+    )
+  }
 })
 
 // Get function usage details
 app.get('/crates/:name/:version/function', async (c) => {
+  const { name, version } = c.req.param()
   const path = c.req.query('path')
 
-  return c.json({
-    signature: 'pub fn mock_function() -> String',
-    usage: 'This is a mock usage summary.',
-  })
+  if (!path) {
+    return c.json(
+      {
+        success: false,
+        error: 'path query parameter is required',
+      },
+      { status: 400 },
+    )
+  }
+
+  const segments = path.split('::')
+  const pathToFunction = segments.join('/')
+
+  try {
+    // Construct R2 key from path parameters
+    const r2Key = `crates/${name}/${version}/${pathToFunction}.json`
+
+    // Retrieve the item's JSON file from R2
+    const itemObj = await c.env.CRATES_STORAGE.get(r2Key)
+
+    if (!itemObj) {
+      return c.json(
+        {
+          success: false,
+          error: 'Function not found',
+        },
+        { status: 404 },
+      )
+    }
+
+    // Return the full JSON object
+    const itemData: ItemInfo = await itemObj.json()
+    const functionDetails = (itemData.details as { function: FunctionDetails })
+      .function
+    return c.json({
+      success: true,
+      data: {
+        signature: functionDetails.signature,
+        agent_summary: itemData.agent_summary || 'No summary available',
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching function:', error)
+    return c.json(
+      {
+        success: false,
+        error: 'Failed to fetch function',
+        details: String(error),
+      },
+      { status: 500 },
+    )
+  }
 })
 
 // Query crate
@@ -183,14 +299,42 @@ app.post(
     const { name, version } = c.req.param()
     const { query } = c.req.valid('json')
 
-    return c.json({
-      results: [
-        {
-          snippet: 'pub fn relevant_function() { ... }',
+    try {
+      // Use AUTORAG aiSearch with filtering by crateName and version
+      const results = await c.env.AUTORAG.aiSearch({
+        query,
+        filter: {
+          crateName: name,
+          version: version,
         },
-      ],
-    })
+      })
+
+      return c.json({
+        success: true,
+        results,
+      })
+    } catch (error) {
+      console.error('Error querying crate:', error)
+      return c.json(
+        {
+          success: false,
+          error: 'Failed to query crate',
+          details: String(error),
+        },
+        { status: 500 },
+      )
+    }
   },
 )
+
+app.all('*', (c) => {
+  return c.json(
+    {
+      success: false,
+      error: 'Not Found',
+    },
+    { status: 404 },
+  )
+})
 
 export default app
