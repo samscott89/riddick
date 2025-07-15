@@ -28,12 +28,8 @@ interface RustParser extends Fetcher {
   }): Promise<ParseResponse>
 }
 
-export interface Env {
-  DB: D1Database
-  CRATE_BUCKET: R2Bucket
+export interface Env extends Cloudflare.Env {
   RUST_PARSER: RustParser
-  CRATE_WORKFLOW: Workflow
-  AI: Ai
 }
 
 export interface CrateProcessingParams {
@@ -64,7 +60,7 @@ export class CrateProcessor {
     const key = `${crateName}-${version}.tar.gz`
 
     // first, check if the crate already exists in R2
-    const existingCrate = await this.env.CRATE_BUCKET.get(key)
+    const existingCrate = await this.env.CRATE_DOWNLOADS.get(key)
     let tarballBuffer: ArrayBuffer
     if (existingCrate) {
       console.log(`Found existing crate ${crateName} v${version} in R2`)
@@ -90,7 +86,7 @@ export class CrateProcessor {
       tarballBuffer = await response.arrayBuffer()
 
       // Store in R2 for future use
-      await this.env.CRATE_BUCKET.put(key, tarballBuffer)
+      await this.env.CRATE_DOWNLOADS.put(key, tarballBuffer)
     }
 
     // Extract and read Rust files
@@ -320,9 +316,7 @@ export class CrateProcessor {
         }
 
         // Generate AI summary using the item's fullCode and docComment
-        const summaryPrompt = `Analyze this Rust code item and provide a CONCISE summary: ${itemPrompt}".`
-
-        const agentSummary = await this.generateAISummary(summaryPrompt)
+        const agentSummary = await this.generateAISummary(itemPrompt)
 
         // Add the summary to the item
         item.agent_summary = agentSummary
@@ -330,8 +324,6 @@ export class CrateProcessor {
         // Overwrite the existing R2 object with the enriched version
         await this.env.CRATE_BUCKET.put(key, JSON.stringify(item))
         console.log(`Updated item ${item.name} with AI summary`)
-
-        return agentSummary
       } catch (error) {
         console.error(`Failed to summarize item at ${key}:`, error)
       }
@@ -371,13 +363,11 @@ export class CrateProcessor {
       // Overwrite the existing R2 object with the enriched version
       await this.env.CRATE_BUCKET.put(key, JSON.stringify(info))
       console.log(`Updated item ${storedItem.name} with AI summary`)
-      summary = agentSummary
+      console.log(`Completed AI summarization`)
+      return agentSummary
     } catch (error) {
       throw new Error(`Failed to summarize item at ${key}: ${error}`)
     }
-
-    console.log(`Completed AI summarization`)
-    return summary
   }
 
   async generateAISummary(prompt: string): Promise<string> {

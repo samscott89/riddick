@@ -7,29 +7,8 @@
     {
       "binding": "DB",
       "database_name": "riddick-db",
-      "database_id": "local",
-      "migrations_dir": "../../packages/database/migrations"
+      "database_id": "57929bff-19f7-4bf3-aa36-2832694793dc",
+      "migrations_dir": "./migrations"
     }
   ],
-  
-  // Production environment configuration
-  // "env": {
-  //   "production": {
-  //     "name": "riddick-api-production",
-  //     "d1_databases": [
-  //       {
-  //         "binding": "DB",
-  //         "database_name": "riddick-db-production",
-  //         "database_id": "57929bff-19f7-4bf3-aa36-2832694793dc",
-  //         "migrations_dir": "../../packages/database/migrations"
-  //       }
-  //     ],
-  //     "r2_buckets": [
-  //       {
-  //         "binding": "CRATES_STORAGE",
-  //         "bucket_name": "riddick-crates-production"
-  //       }
-  //     ]
-  //   }
-  // }
 }

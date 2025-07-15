@@ -82,7 +82,7 @@ describe('crate-workflow', () => {
     expect(completedCrate).toBeDefined()
     expect(completedCrate!.status).toBe('complete')
     expect(completedCrate!.agent_summary).toContain(
-      'Mock AI response for Summarize this Rust crate "crate-one"',
+      'Mock AI response for Analyze this Rust module and provide a concise summary:',
     )
 
     const prefix = `crates/${completedCrate!.name}/${completedCrate!.version}/`

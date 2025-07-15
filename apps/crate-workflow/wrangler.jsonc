@@ -14,7 +14,7 @@
 	"compatibility_flags": [
 		// Required for `SELF.queue()`
 		// NOTE: this *only* works for tests
-		"service_binding_extra_handlers"
+		// "service_binding_extra_handlers"
 	],
 	"workflows": [
 		{
@@ -34,13 +34,17 @@
 			"binding": "DB",
 			"database_name": "riddick-db",
 			"migrations_dir": "../../packages/database/migrations",
-			"database_id": "local"
+			"database_id": "57929bff-19f7-4bf3-aa36-2832694793dc"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "CRATE_BUCKET",
 			"bucket_name": "riddick-crates"
+		},
+		{
+			"binding": "CRATE_DOWNLOADS",
+			"bucket_name": "riddick-crate-downloads"
 		}
 	],
 	"ai": {

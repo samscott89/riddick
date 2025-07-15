@@ -14,16 +14,7 @@ import type {
 } from '@riddick/types'
 import { CrateStatus } from '@riddick/types'
 
-type Bindings = {
-  API_KEY: string
-  CRATE_QUEUE: Queue
-  DB: D1Database
-  CRATES_STORAGE: R2Bucket
-  CRATES_API_BASE_URL: string
-  AUTORAG: any
-}
-
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Cloudflare.Env }>()
 
 app.use('/index', prettyJSON(), logger(), async (c, next) => {
   const auth = bearerAuth({ token: c.env.API_KEY })
@@ -301,11 +292,12 @@ app.post(
 
     try {
       // Use AUTORAG aiSearch with filtering by crateName and version
-      const results = await c.env.AUTORAG.aiSearch({
+      const results = await c.env.AI.autorag('riddick-crates-rag').aiSearch({
         query,
-        filter: {
-          crateName: name,
-          version: version,
+        filters: {
+          type: 'eq',
+          key: 'folder',
+          value: `crates/${name}/${version}/`,
         },
       })
 
