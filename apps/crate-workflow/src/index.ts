@@ -13,6 +13,11 @@ import {
   type ParseResponse,
 } from '@riddick/types'
 import { TarExtractor } from './extractor'
+import {
+  getModuleSummaryPrompt,
+  getPromptForItem,
+  getSystemPrompt,
+} from './prompts'
 import { NonRetryableError } from 'cloudflare:workflows'
 
 interface RustParser extends Fetcher {
@@ -280,91 +285,6 @@ export class CrateProcessor {
     return 'unknown'
   }
 
-  private functionPrompt(name: string, fullCode: string): string {
-    return `
-Function: ${name}
-
-Definition:
-\`\`\`rust
-${fullCode}      
-\`\`\``
-  }
-
-  private adtPrompt(
-    adtType: string,
-    name: string,
-    fullCode: string,
-    methods: ItemInfo[],
-  ): string {
-    const methodDetails = methods.map((m) => {
-      if ('function' in m.details) {
-        return m.details.function.signature
-      } else {
-        return `${m.docComment || ''}${m.name}`
-      }
-    })
-
-    return `
-${adtType}: ${name}
-
-Definition:
-
-\`\`\`rust
-${fullCode}
-\`\`\`
-
-Methods:
-${methodDetails.join('\n')}
-`
-  }
-
-  private traitPrompt(name: string, fullCode: string): string {
-    return `
-Trait: ${name}
-
-Definition:
-
-\`\`\`rust
-${fullCode}
-\`\`\`
-`
-  }
-
-  private modulePrompt(name: string, info: FileInfo): string {
-    const skeleton = info
-
-    return `
-Module: ${name}
-
-Definition:
-
-\`\`\`rust
-${skeleton}
-\`\`\`
-`
-  }
-
-  private promptForItemType(item: ItemInfo): string | null {
-    if ('function' in item.details) {
-      const _functionDetails = item.details.function
-
-      return this.functionPrompt(item.name, item.fullCode)
-    }
-    if ('adt' in item.details) {
-      const adtDetails = item.details.adt
-      return this.adtPrompt(
-        adtDetails.adtType,
-        item.name,
-        item.fullCode,
-        adtDetails.methods,
-      )
-    }
-    if ('trait' in item.details) {
-      return this.traitPrompt(item.name, item.fullCode)
-    }
-    return null
-  }
-
   async summarizeItem(storedItem: StoredModule): Promise<void> {
     console.log(
       `Starting AI summarization for ${storedItem.items.length} items`,
@@ -393,14 +313,14 @@ ${skeleton}
           continue
         }
 
-        const itemPrompt = this.promptForItemType(item)
+        const itemPrompt = getPromptForItem(item)
         if (!itemPrompt) {
           // not something we want to summarize
           continue
         }
 
         // Generate AI summary using the item's fullCode and docComment
-        const summaryPrompt = `Analyze this Rust code item and provide a concise summary: ${itemPrompt}".`
+        const summaryPrompt = `Analyze this Rust code item and provide a CONCISE summary: ${itemPrompt}".`
 
         const agentSummary = await this.generateAISummary(summaryPrompt)
 
@@ -436,7 +356,7 @@ ${skeleton}
       }
 
       // Generate AI summary using the item's fullCode and docComment
-      const modulePrompt = this.modulePrompt(storedItem.name, info)
+      const modulePrompt = getModuleSummaryPrompt(storedItem.name, info)
 
       const summaryPrompt = `Analyze this Rust module and provide a concise summary: ${modulePrompt}".`
 
@@ -539,8 +459,7 @@ Explain what this module does and its role in the crate.`,
           messages: [
             {
               role: 'system',
-              content:
-                'You are a helpful assistant that explains Rust code. Be concise and technical.',
+              content: getSystemPrompt(),
             },
             {
               role: 'user',
